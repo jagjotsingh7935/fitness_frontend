@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FitPulse – Client Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.44.0/apexcharts.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0e14;
+    --bg2: #161620;
+    --card: #1a1a27;
+    --card2: #1f1f30;
+    --blue: #2979FF;
+    --blue-light: #5b9bff;
+    --purple: #9C7BFF;
+    --purple-light: #b89fff;
+    --green: #00e5a0;
+    --orange: #ff7043;
+    --pink: #ff4d8f;
+    --yellow: #ffd740;
+    --text: #ffffff;
+    --text2: #a0a0c0;
+    --text3: #6060a0;
+    --border: rgba(255,255,255,0.07);
+    --radius: 20px;
+    --radius-sm: 14px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --nav-h: 72px;
+    --max-w: 430px;
+
+    /* Typography scale */
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Space Grotesk', sans-serif;
+
+    --text-xs: 10px;
+    --text-sm: 11px;
+    --text-base: 13px;
+    --text-md: 14px;
+    --text-lg: 16px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-3xl: 28px;
+
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+    --lh-tight: 1.15;
+    --lh-snug: 1.3;
+    --lh-normal: 1.5;
+    --lh-relaxed: 1.65;
+
+    --ls-tight: -0.02em;
+    --ls-normal: -0.01em;
+    --ls-wide: 0.04em;
+    --ls-wider: 0.08em;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--lh-normal);
+    letter-spacing: var(--ls-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .phone-shell {
+    width: 100%;
+    max-width: var(--max-w);
+    min-height: 100vh;
+    position: relative;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-bottom: var(--nav-h);
+    animation: fadeUp .35s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 20px;
+    scrollbar-width: none;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    padding: 52px 20px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+  }
+  .topbar-left .greeting {
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--text2);
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .topbar-left h1 {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+    line-height: var(--lh-tight);
+    background: linear-gradient(135deg, #fff 40%, var(--purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .notif-btn {
+    width: 40px; height: 40px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .notif-dot {
+    width: 7px; height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    position: absolute;
+    top: 9px; right: 9px;
+    border: 1.5px solid var(--bg);
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: var(--fw-bold);
+    font-size: var(--text-md);
+    cursor: pointer;
+    letter-spacing: 0;
+  }
+
+  /* ─── SECTION HEADING ─── */
+  .sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24px 0 12px;
+  }
+  .sec-head h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+    color: var(--text);
+  }
+  .sec-head a {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-medium);
+    color: var(--blue-light);
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: 0;
+  }
+
+  /* ─── GOAL HERO CARD ─── */
+  .goal-hero {
+    background: linear-gradient(135deg, #1a2aff 0%, #7c3aed 60%, #9c27b0 100%);
+    border-radius: var(--radius);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .goal-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .goal-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .goal-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .goal-badge {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+  }
+  .goal-flame { font-size: 26px; filter: drop-shadow(0 0 12px rgba(255,180,0,.6)); }
+  .goal-hero h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-tight);
+  }
+  .goal-hero p {
+    font-size: var(--text-base);
+    font-weight: var(--fw-regular);
+    color: rgba(255,255,255,0.65);
+    margin-top: 4px;
+    line-height: var(--lh-relaxed);
+  }
+  .goal-stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    position: relative; z-index: 1;
+  }
+  .goal-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+  .goal-stat .val {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+    line-height: 1;
+  }
+  .goal-stat .lbl {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wider);
+  }
+
+  /* ─── PROGRESS RING ─── */
+  .progress-ring-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+    position: relative; z-index: 1;
+    gap: 16px;
+  }
+  .ring-container {
+    position: relative;
+    width: 90px; height: 90px;
+    flex-shrink: 0;
+  }
+  .ring-container svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1px;
+  }
+  .ring-center .pct {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+    line-height: 1;
+  }
+  .ring-center .lbl2 {
+    font-size: 8px;
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-wider);
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+  }
+  .ring-info { flex: 1; }
+  .ring-info h3 {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .ring-info p {
+    font-size: var(--text-base);
+    font-weight: var(--fw-regular);
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+    line-height: var(--lh-snug);
+  }
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    color: #fff;
+    transition: background .2s;
+  }
+  .btn-start:hover { background: rgba(255,255,255,0.28); }
+
+  /* ─── QUICK ACTIONS ─── */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 4px 0 4px;
+  }
+  .qa-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .qa-icon {
+    width: 54px; height: 54px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s;
+  }
+  .qa-item:hover .qa-icon { transform: translateY(-3px); }
+  .qa-label {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: var(--text2);
+    text-align: center;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card .glow {
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.15;
+    filter: blur(20px);
+  }
+  .stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .stat-val {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+    line-height: 1;
+  }
+  .stat-lbl {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: var(--text2);
+    margin-top: 5px;
+    letter-spacing: 0.01em;
+  }
+  .stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: var(--fw-semibold);
+    margin-top: 7px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.01em;
+  }
+  .up { background: rgba(0,229,160,0.12); color: var(--green); }
+  .down { background: rgba(255,112,67,0.12); color: var(--orange); }
+
+  /* ─── WORKOUT CARDS ─── */
+  .workout-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .workout-scroll::-webkit-scrollbar { display: none; }
+  .workout-card {
+    min-width: 160px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: transform .2s;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .workout-card:hover { transform: translateY(-3px); }
+  .workout-card.featured {
+    background: linear-gradient(135deg, #1e3a8a, #4c1d95);
+    min-width: 200px;
+  }
+  .wc-badge {
+    display: inline-flex;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wider);
+    margin-bottom: 12px;
+    background: rgba(255,255,255,0.12);
+  }
+  .wc-icon { font-size: 26px; margin-bottom: 10px; display: block; }
+  .wc-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+    line-height: var(--lh-snug);
+  }
+  .wc-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .wc-tag {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: var(--text2);
+    background: rgba(255,255,255,0.06);
+    padding: 3px 8px;
+    border-radius: 8px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .wc-progress {
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .wc-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+  }
+
+  /* ─── DIET CARD ─── */
+  .diet-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+  }
+  .diet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .diet-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .diet-icon-wrap {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff7043, #ff9800);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .diet-title {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .diet-sub {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .macro-row {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .macro-item {
+    background: var(--card2);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+  }
+  .macro-val {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+  }
+  .macro-lbl {
+    font-size: 9px;
+    font-weight: var(--fw-semibold);
+    color: var(--text2);
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wider);
+  }
+  .macro-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+  .meal-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .meal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card2);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .meal-emoji { font-size: 20px; flex-shrink: 0; }
+  .meal-info { flex: 1; min-width: 0; }
+  .meal-name {
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .meal-time {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .meal-cal {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    color: var(--orange);
+    flex-shrink: 0;
+    letter-spacing: var(--ls-tight);
+  }
+  .meal-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  .meal-check.done {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  /* ─── VIDEO CARD ─── */
+  .video-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .video-scroll::-webkit-scrollbar { display: none; }
+  .video-card {
+    min-width: 200px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .video-thumb {
+    width: 100%;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    position: relative;
+  }
+  .video-play {
+    position: absolute;
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .video-play svg { margin-left: 3px; }
+  .video-info { padding: 10px 12px 12px; }
+  .video-title {
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    line-height: var(--lh-snug);
+    letter-spacing: -0.005em;
+  }
+  .video-meta {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .video-duration {
+    position: absolute;
+    bottom: 68px; right: 8px;
+    background: rgba(0,0,0,0.7);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: var(--text-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── BOTTOM NAV ─── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    height: var(--nav-h);
+    background: rgba(22,22,32,0.96);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px 8px;
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 14px;
+    transition: all .2s;
+    position: relative;
+  }
+  .nav-item.active .nav-icon { color: var(--blue); }
+  .nav-item.active .nav-label { color: var(--blue); }
+  .nav-item.active { background: rgba(41,121,255,0.1); }
+  .nav-label {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: var(--text3);
+    transition: color .2s;
+    letter-spacing: 0.01em;
+  }
+  .nav-icon {
+    color: var(--text3);
+    transition: color .2s;
+    display: flex;
+  }
+
+  /* ─── EXERCISE LIST ─── */
+  .exercise-cats {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .exercise-cats::-webkit-scrollbar { display: none; }
+  .ex-cat {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: var(--text-sm);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    transition: all .2s;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+  }
+  .ex-cat.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+  .exercise-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .ex-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    cursor: pointer;
+    transition: transform .2s;
+    text-align: center;
+  }
+  .ex-card:hover { transform: translateY(-2px); }
+  .ex-svg { font-size: 32px; margin-bottom: 8px; display: block; }
+  .ex-name {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .ex-detail {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .ex-sets {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 9px;
+  }
+  .ex-set {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .ex-set.done { background: var(--blue); }
+
+  /* ─── PLANS SCREEN ─── */
+  .plan-tabs {
+    display: flex;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .plan-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: var(--text-sm);
+    font-weight: var(--fw-semibold);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 0.01em;
+  }
+  .plan-tab.active {
+    background: var(--blue);
+    color: #fff;
+  }
+  .plan-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 12px;
+    cursor: pointer;
+  }
+  .plan-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .plan-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: var(--text-xs);
+    font-weight: var(--fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wide);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .plan-title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .plan-week-row {
+    display: flex;
+    gap: 6px;
+    margin: 12px 0;
+  }
+  .day-circle {
+    flex: 1;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--card2);
+    font-size: 9px;
+    font-weight: var(--fw-semibold);
+    color: var(--text3);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all .2s;
+    max-width: 40px;
+  }
+  .day-circle .day-lbl {
+    font-size: 8px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .day-circle.completed { background: rgba(41,121,255,0.15); border-color: var(--blue); color: var(--blue); }
+  .day-circle.today { background: var(--blue); color: #fff; }
+  .day-circle.rest { background: rgba(255,112,67,0.1); border-color: rgba(255,112,67,0.3); color: var(--orange); }
+
+  /* ─── PROFILE SCREEN ─── */
+  .profile-hero {
+    background: linear-gradient(135deg, #1a1a3e, #0d1b3e);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0;
+    margin: 0 auto 14px;
+    border: 3px solid rgba(255,255,255,0.15);
+  }
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+  }
+  .profile-tag {
+    font-size: var(--text-base);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 5px;
+  }
+  .profile-stats {
+    display: flex;
+    gap: 1px;
+    margin-top: 20px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .ps-item {
+    flex: 1;
+    padding: 14px 8px;
+    text-align: center;
+    background: rgba(255,255,255,0.04);
+  }
+  .ps-val {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+  }
+  .ps-lbl {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-medium);
+    color: var(--text2);
+    margin-top: 3px;
+    letter-spacing: 0.01em;
+  }
+
+  .pref-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .pref-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .pref-item:last-child { border-bottom: none; }
+  .pref-item:hover { background: rgba(255,255,255,0.03); }
+  .pref-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pref-text { flex: 1; }
+  .pref-text h4 {
+    font-size: var(--text-md);
+    font-weight: var(--fw-medium);
+    letter-spacing: -0.005em;
+  }
+  .pref-text p {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .pref-arrow {
+    color: var(--text3);
+    font-size: 18px;
+    font-weight: var(--fw-regular);
+  }
+
+  /* ─── CHART CARD ─── */
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 12px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .chart-title {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .chart-period {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-medium);
+    color: var(--blue-light);
+    background: rgba(41,121,255,0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── TRAINER CARD ─── */
+  .trainer-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .trainer-av {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0056ff, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0;
+    flex-shrink: 0;
+  }
+  .trainer-info { flex: 1; min-width: 0; }
+  .trainer-info h4 {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .trainer-info p {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 3px;
+  }
+  .trainer-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: var(--text-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-wide);
+    background: rgba(0,229,160,0.12);
+    color: var(--green);
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
+  .chat-btn {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: rgba(41,121,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ─── STREAK CARD ─── */
+  .streak-card {
+    background: linear-gradient(135deg, #ff6b35, #f7c59f20);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .streak-fire { font-size: 38px; filter: drop-shadow(0 0 12px rgba(255,150,0,.8)); flex-shrink: 0; }
+  .streak-info { flex: 1; }
+  .streak-info h3 {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+  }
+  .streak-info p {
+    font-size: var(--text-base);
+    font-weight: var(--fw-regular);
+    color: rgba(255,255,255,0.65);
+    margin-top: 3px;
+  }
+  .streak-dots { display: flex; gap: 5px; margin-top: 9px; }
+  .streak-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .streak-dot.lit { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+
+  /* ─── BADGES ─── */
+  .badges-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 4px 16px;
+  }
+  .badge-item {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .badge-circle {
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 2px solid var(--border);
+  }
+  .badge-circle.earned {
+    border-color: var(--yellow);
+    box-shadow: 0 0 16px rgba(255,215,64,0.3);
+    background: rgba(255,215,64,0.08);
+  }
+  .badge-name {
+    font-size: 9px;
+    font-weight: var(--fw-medium);
+    color: var(--text2);
+    text-align: center;
+    max-width: 60px;
+    line-height: var(--lh-snug);
+  }
+
+  /* ─── WATER TRACKER ─── */
+  .water-card {
+    background: linear-gradient(135deg, #0d3b6e, #1565c0);
+    border: 1px solid rgba(33,150,243,0.3);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .water-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .water-title {
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+  }
+  .water-amount {
+    font-size: var(--text-base);
+    font-weight: var(--fw-medium);
+    color: rgba(255,255,255,0.7);
+  }
+  .water-cups { display: flex; gap: 8px; flex-wrap: wrap; }
+  .water-cup {
+    width: 36px; height: 44px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 4px;
+    cursor: pointer;
+    transition: all .2s;
+    overflow: hidden;
+    position: relative;
+  }
+  .water-cup.filled { border-color: #42a5f5; background: rgba(66,165,245,0.25); }
+  .water-fill {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(180deg, rgba(66,165,245,0.6), rgba(33,150,243,0.8));
+    border-radius: 0 0 6px 6px;
+    transition: height .4s ease;
+  }
+
+  /* ─── NOTIFICATION PANEL ─── */
+  .notif-panel {
+    position: fixed;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--max-w);
+    height: 100vh;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .notif-panel.open { display: flex; animation: slideUp .3s ease; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(30px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .notif-sheet {
+    background: var(--card);
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .notif-handle {
+    width: 36px; height: 4px;
+    background: var(--text3);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .notif-sheet-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+    margin-bottom: 16px;
+  }
+  .notif-entry {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-dot2 {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .notif-body h4 {
+    font-size: var(--text-base);
+    font-weight: var(--fw-semibold);
+    letter-spacing: -0.005em;
+  }
+  .notif-body p {
+    font-size: var(--text-sm);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 3px;
+    line-height: var(--lh-snug);
+  }
+  .notif-body span {
+    font-size: var(--text-xs);
+    font-weight: var(--fw-regular);
+    color: var(--text3);
+    margin-top: 5px;
+    display: block;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── WORKOUT ACTIVE ─── */
+  .workout-active {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: var(--bg);
+    flex-direction: column;
+    max-width: var(--max-w);
+    left: 50%;
+    transform: translateX(-50%);
+    animation: fadeUp .3s ease;
+  }
+  .workout-active.open { display: flex; }
+  .wa-top {
+    padding: 52px 20px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wa-close {
+    width: 38px; height: 38px;
+    background: var(--card);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  .wa-workout-label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: var(--fw-semibold);
+    color: var(--text2);
+    text-align: center;
+    letter-spacing: var(--ls-wider);
+    text-transform: uppercase;
+  }
+  .wa-timer {
+    font-family: var(--font-display);
+    font-size: 52px;
+    font-weight: var(--fw-bold);
+    text-align: center;
+    letter-spacing: var(--ls-tight);
+    background: linear-gradient(135deg, #fff, var(--purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  .wa-body { flex: 1; overflow-y: auto; padding: 0 20px; scrollbar-width: none; }
+  .wa-exercise-big {
+    background: linear-gradient(135deg, var(--card), #1e1e40);
+    border-radius: 24px;
+    padding: 32px;
+    text-align: center;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+  }
+  .wa-emoji { font-size: 58px; margin-bottom: 14px; display: block; }
+  .wa-ex-name {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--ls-tight);
+  }
+  .wa-ex-sub {
+    font-size: var(--text-base);
+    font-weight: var(--fw-regular);
+    color: var(--text2);
+    margin-top: 6px;
+    line-height: var(--lh-relaxed);
+  }
+  .set-tracker { display: flex; gap: 10px; justify-content: center; margin: 16px 0; }
+  .set-btn {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0;
+    transition: all .2s;
+    color: var(--text);
+  }
+  .set-btn.done { background: var(--blue); border-color: var(--blue); }
+  .wa-next-btn {
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    border: none;
+    border-radius: 16px;
+    padding: 17px;
+    font-family: var(--font-display);
+    font-size: var(--text-md);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-tight);
+    color: #fff;
+    width: 100%;
+    cursor: pointer;
+    margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+  .skeleton {
+    background: var(--card);
+    border-radius: 8px;
+    animation: pulse 1.5s ease infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-shell">
+
+  <!-- ═══ SCREEN 1: HOME ═══ -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="greeting">Good Morning 🌤</div>
+        <h1>Arjun Singh</h1>
+      </div>
+      <div class="avatar-wrap">
+        <div class="notif-btn" onclick="openNotif()">
+          <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="avatar">A</div>
+      </div>
+    </div>
+
+    <div class="scroll-area">
+
+      <!-- GOAL HERO -->
+      <div class="goal-hero">
+        <div class="goal-hero-top">
+          <div class="goal-badge">Weight Loss</div>
+          <span class="goal-flame">🔥</span>
+        </div>
+        <h2>Today's Goal</h2>
+        <p>2,200 kcal target · 8 exercises</p>
+        <div class="goal-stats">
+          <div class="goal-stat">
+            <div class="val">1,420</div>
+            <div class="lbl">Burned</div>
+          </div>
+          <div class="goal-stat">
+            <div class="val">780</div>
+            <div class="lbl">Remaining</div>
+          </div>
+          <div class="goal-stat">
+            <div class="val">64%</div>
+            <div class="lbl">Done</div>
+          </div>
+        </div>
+        <div class="progress-ring-wrap">
+          <div class="ring-container">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="7"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="url(#ringGrad)" stroke-width="7"
+                stroke-dasharray="239" stroke-dashoffset="86" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#fff"/>
+                  <stop offset="100%" stop-color="#c4b5fd"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="ring-center">
+              <span class="pct">64%</span>
+              <span class="lbl2">Done</span>
+            </div>
+          </div>
+          <div class="ring-info">
+            <h3>Keep pushing!</h3>
+            <p>3 exercises left today.<br>You're on track! 💪</p>
+            <div class="btn-start" onclick="openWorkout()">
+              <svg width="12" height="12" fill="#fff" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Start Workout
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAK -->
+      <div class="sec-head">
+        <h2>Your Streak</h2>
+      </div>
+      <div class="streak-card">
+        <span class="streak-fire">🔥</span>
+        <div class="streak-info">
+          <h3>12 Day Streak!</h3>
+          <p>Keep it up — don't break the chain!</p>
+          <div class="streak-dots">
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot lit"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="sec-head">
+        <h2>Quick Access</h2>
+      </div>
+      <div class="quick-actions">
+        <div class="qa-item" onclick="openWorkout()">
+          <div class="qa-icon" style="background: linear-gradient(135deg,#1a3aff,#7c3aed)">
+            <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M6.5 6.5h11"/><path d="M6 17.5h12"/><circle cx="4" cy="6.5" r="1.5"/><circle cx="20" cy="6.5" r="1.5"/><circle cx="4" cy="17.5" r="1.5"/><circle cx="20" cy="17.5" r="1.5"/><rect x="6" y="10" width="12" height="4" rx="2"/></svg>
+          </div>
+          <span class="qa-label">Workout</span>
+        </div>
+        <div class="qa-item" onclick="navTo('plans')">
+          <div class="qa-icon" style="background: linear-gradient(135deg,#ff6f00,#ff9800)">
+            <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L3 7l9 5 9-5z"/><path d="M3 17l9 5 9-5"/><path d="M3 12l9 5 9-5"/></svg>
+          </div>
+          <span class="qa-label">Diet Plan</span>
+        </div>
+        <div class="qa-item" onclick="navTo('videos')">
+          <div class="qa-icon" style="background: linear-gradient(135deg,#c2185b,#e91e63)">
+            <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </div>
+          <span class="qa-label">Videos</span>
+        </div>
+        <div class="qa-item" onclick="navTo('profile')">
+          <div class="qa-icon" style="background: linear-gradient(135deg,#00796b,#009688)">
+            <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="qa-label">Profile</span>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="sec-head"><h2>Today's Stats</h2><a>Weekly ›</a></div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="glow" style="background:#2979ff"></div>
+          <div class="stat-icon" style="background:rgba(41,121,255,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#2979ff" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-val">8,240</div>
+          <div class="stat-lbl">Steps Today</div>
+          <div class="stat-change up">↑ +12%</div>
+        </div>
+        <div class="stat-card">
+          <div class="glow" style="background:#ff7043"></div>
+          <div class="stat-icon" style="background:rgba(255,112,67,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#ff7043" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div class="stat-val">42m</div>
+          <div class="stat-lbl">Active Time</div>
+          <div class="stat-change up">↑ On track</div>
+        </div>
+        <div class="stat-card">
+          <div class="glow" style="background:#00e5a0"></div>
+          <div class="stat-icon" style="background:rgba(0,229,160,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#00e5a0" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div class="stat-val">1,420</div>
+          <div class="stat-lbl">Cal Burned</div>
+          <div class="stat-change up">↑ +5%</div>
+        </div>
+        <div class="stat-card">
+          <div class="glow" style="background:#9c7bff"></div>
+          <div class="stat-icon" style="background:rgba(156,123,255,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#9c7bff" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <div class="stat-val">72</div>
+          <div class="stat-lbl">BPM Avg</div>
+          <div class="stat-change down">↓ Resting</div>
+        </div>
+      </div>
+
+      <!-- CALORIE CHART -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Calorie Trend</div>
+          <div class="chart-period">7 Days</div>
+        </div>
+        <div id="calorieChart"></div>
+      </div>
+
+      <!-- WATER -->
+      <div class="sec-head"><h2>Hydration</h2><a>Log ›</a></div>
+      <div class="water-card">
+        <div class="water-header">
+          <div class="water-title">💧 Water Intake</div>
+          <div class="water-amount">5 / 8 cups</div>
+        </div>
+        <div class="water-cups" id="waterCups"></div>
+      </div>
+
+      <!-- WORKOUT CARDS -->
+      <div class="sec-head"><h2>Today's Workout</h2><a onclick="navTo('exercises')">See all ›</a></div>
+      <div class="workout-scroll">
+        <div class="workout-card featured" onclick="openWorkout()">
+          <div class="wc-badge">⭐ Featured</div>
+          <span class="wc-icon">🏋️</span>
+          <div class="wc-name">Upper Body Blast</div>
+          <div class="wc-meta">
+            <div class="wc-tag"><svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> 45m</div>
+            <div class="wc-tag">🔥 380 cal</div>
+          </div>
+          <div class="wc-progress"><div class="wc-progress-fill" style="width:64%"></div></div>
+        </div>
+        <div class="workout-card">
+          <div class="wc-badge">🏃 Cardio</div>
+          <span class="wc-icon">🚴</span>
+          <div class="wc-name">HIIT Cycling</div>
+          <div class="wc-meta">
+            <div class="wc-tag">30m</div>
+            <div class="wc-tag">🔥 280 cal</div>
+          </div>
+          <div class="wc-progress"><div class="wc-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="workout-card">
+          <div class="wc-badge">🧘 Recovery</div>
+          <span class="wc-icon">🧘</span>
+          <div class="wc-name">Yoga Stretch</div>
+          <div class="wc-meta">
+            <div class="wc-tag">20m</div>
+            <div class="wc-tag">🔥 90 cal</div>
+          </div>
+          <div class="wc-progress"><div class="wc-progress-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <!-- TRAINER -->
+      <div class="sec-head"><h2>Your Trainer</h2></div>
+      <div class="trainer-card">
+        <div class="trainer-av">RK</div>
+        <div class="trainer-info">
+          <h4>Rahul Kumar</h4>
+          <p>⭐ 4.9 · Weight Loss Specialist</p>
+        </div>
+        <div class="trainer-badge">Active</div>
+        <div class="chat-btn">
+          <svg width="18" height="18" fill="none" stroke="#2979ff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+      </div>
+
+      <!-- BADGES -->
+      <div class="sec-head"><h2>Achievements</h2><a>All ›</a></div>
+      <div class="badges-row">
+        <div class="badge-item">
+          <div class="badge-circle earned">🏆</div>
+          <div class="badge-name">First Week</div>
+        </div>
+        <div class="badge-item">
+          <div class="badge-circle earned">🔥</div>
+          <div class="badge-name">10 Day Streak</div>
+        </div>
+        <div class="badge-item">
+          <div class="badge-circle earned">💪</div>
+          <div class="badge-name">Power User</div>
+        </div>
+        <div class="badge-item">
+          <div class="badge-circle">🥇</div>
+          <div class="badge-name">30 Day Goal</div>
+        </div>
+        <div class="badge-item">
+          <div class="badge-circle">⚡</div>
+          <div class="badge-name">Speed Run</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══ SCREEN 2: EXERCISES ═══ -->
+  <div class="screen" id="screen-exercises">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="greeting">Your Plan</div>
+        <h1>Exercises</h1>
+      </div>
+      <div class="notif-btn">
+        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="exercise-cats">
+        <div class="ex-cat active">All</div>
+        <div class="ex-cat">Chest</div>
+        <div class="ex-cat">Back</div>
+        <div class="ex-cat">Legs</div>
+        <div class="ex-cat">Arms</div>
+        <div class="ex-cat">Core</div>
+        <div class="ex-cat">Cardio</div>
+      </div>
+
+      <div class="chart-card" style="margin-top:16px">
+        <div class="chart-header">
+          <div class="chart-title">Weekly Volume</div>
+          <div class="chart-period">This Week</div>
+        </div>
+        <div id="volumeChart"></div>
+      </div>
+
+      <div class="sec-head" style="margin-top:20px"><h2>Today's Exercises</h2></div>
+      <div class="exercise-grid">
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🏋️‍♂️</span>
+          <div class="ex-name">Bench Press</div>
+          <div class="ex-detail">4 sets × 12 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set done"></div>
+            <div class="ex-set done"></div><div class="ex-set"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">💪</span>
+          <div class="ex-name">Bicep Curls</div>
+          <div class="ex-detail">3 sets × 15 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set done"></div>
+            <div class="ex-set"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🦵</span>
+          <div class="ex-name">Squats</div>
+          <div class="ex-detail">4 sets × 10 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set"></div>
+            <div class="ex-set"></div><div class="ex-set"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🤸</span>
+          <div class="ex-name">Pull-Ups</div>
+          <div class="ex-detail">3 sets × 8 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set"></div><div class="ex-set"></div><div class="ex-set"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🧗</span>
+          <div class="ex-name">Deadlift</div>
+          <div class="ex-detail">3 sets × 8 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set done"></div><div class="ex-set done"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🏃</span>
+          <div class="ex-name">Treadmill Run</div>
+          <div class="ex-detail">20 min · 6 km/h</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set done"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🔄</span>
+          <div class="ex-name">Lat Pulldown</div>
+          <div class="ex-detail">4 sets × 12 reps</div>
+          <div class="ex-sets">
+            <div class="ex-set"></div><div class="ex-set"></div>
+            <div class="ex-set"></div><div class="ex-set"></div>
+          </div>
+        </div>
+        <div class="ex-card" onclick="openWorkout()">
+          <span class="ex-svg">🧘</span>
+          <div class="ex-name">Plank Hold</div>
+          <div class="ex-detail">3 × 60 seconds</div>
+          <div class="ex-sets">
+            <div class="ex-set done"></div><div class="ex-set"></div><div class="ex-set"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ SCREEN 3: PLANS ═══ -->
+  <div class="screen" id="screen-plans">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="greeting">Assigned by Trainer</div>
+        <h1>My Plans</h1>
+      </div>
+    </div>
+    <div class="scroll-area">
+
+      <div class="plan-tabs">
+        <div class="plan-tab active" onclick="switchPlanTab(this,'diet-tab')">🥗 Diet</div>
+        <div class="plan-tab" onclick="switchPlanTab(this,'workout-tab')">🏋️ Workout</div>
+      </div>
+
+      <div id="diet-tab">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Macro Split</div>
+            <div class="chart-period">Today</div>
+          </div>
+          <div id="macroChart"></div>
+        </div>
+
+        <div class="diet-card" style="margin-top:14px">
+          <div class="diet-header">
+            <div class="diet-header-left">
+              <div class="diet-icon-wrap">🥗</div>
+              <div>
+                <div class="diet-title">Weight Loss Plan</div>
+                <div class="diet-sub">2,200 kcal / day</div>
+              </div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:var(--text-base);font-weight:var(--fw-semibold);color:var(--green)">✓ Active</div>
+          </div>
+          <div class="macro-row">
+            <div class="macro-item">
+              <div class="macro-val" style="color:#2979ff">165g</div>
+              <div class="macro-lbl">Protein</div>
+              <div class="macro-bar" style="background:linear-gradient(90deg,#2979ff,#5b9bff)"></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-val" style="color:#ff9800">220g</div>
+              <div class="macro-lbl">Carbs</div>
+              <div class="macro-bar" style="background:linear-gradient(90deg,#ff9800,#ffd740)"></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-val" style="color:#e91e63">65g</div>
+              <div class="macro-lbl">Fats</div>
+              <div class="macro-bar" style="background:linear-gradient(90deg,#e91e63,#ff4081)"></div>
+            </div>
+          </div>
+          <div class="meal-list">
+            <div class="meal-item">
+              <div class="meal-emoji">🌅</div>
+              <div class="meal-info">
+                <div class="meal-name">Oats + Banana Smoothie</div>
+                <div class="meal-time">7:00 AM · Breakfast</div>
+              </div>
+              <div class="meal-cal">380 cal</div>
+              <div class="meal-check done">✓</div>
+            </div>
+            <div class="meal-item">
+              <div class="meal-emoji">🥚</div>
+              <div class="meal-info">
+                <div class="meal-name">Boiled Eggs + Toast</div>
+                <div class="meal-time">10:00 AM · Mid Morning</div>
+              </div>
+              <div class="meal-cal">220 cal</div>
+              <div class="meal-check done">✓</div>
+            </div>
+            <div class="meal-item">
+              <div class="meal-emoji">🍛</div>
+              <div class="meal-info">
+                <div class="meal-name">Chicken Rice Bowl</div>
+                <div class="meal-time">1:00 PM · Lunch</div>
+              </div>
+              <div class="meal-cal">540 cal</div>
+              <div class="meal-check" id="lunchCheck" onclick="toggleMeal(this)"></div>
+            </div>
+            <div class="meal-item">
+              <div class="meal-emoji">🥜</div>
+              <div class="meal-info">
+                <div class="meal-name">Mixed Nuts + Whey</div>
+                <div class="meal-time">4:00 PM · Snack</div>
+              </div>
+              <div class="meal-cal">310 cal</div>
+              <div class="meal-check"></div>
+            </div>
+            <div class="meal-item">
+              <div class="meal-emoji">🐟</div>
+              <div class="meal-info">
+                <div class="meal-name">Grilled Fish + Salad</div>
+                <div class="meal-time">7:30 PM · Dinner</div>
+              </div>
+              <div class="meal-cal">450 cal</div>
+              <div class="meal-check"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="workout-tab" style="display:none">
+        <div class="plan-card">
+          <div class="plan-head">
+            <div>
+              <div class="plan-title">8-Week Fat Burn</div>
+              <div style="font-size:var(--text-sm);color:var(--text2);margin-top:5px;font-weight:var(--fw-regular)">Week 4 of 8 · Intermediate</div>
+            </div>
+            <div class="plan-badge" style="background:rgba(41,121,255,0.15);color:var(--blue-light)">Active</div>
+          </div>
+          <div class="plan-week-row">
+            <div class="day-circle completed"><span class="day-lbl">M</span>✓</div>
+            <div class="day-circle completed"><span class="day-lbl">T</span>✓</div>
+            <div class="day-circle completed"><span class="day-lbl">W</span>✓</div>
+            <div class="day-circle today"><span class="day-lbl">T</span>•</div>
+            <div class="day-circle"><span class="day-lbl">F</span></div>
+            <div class="day-circle rest"><span class="day-lbl">S</span>R</div>
+            <div class="day-circle"><span class="day-lbl">S</span></div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--text3);margin-top:4px;font-weight:var(--fw-medium);letter-spacing:0.02em">R = Rest Day</div>
+        </div>
+        <div class="plan-card">
+          <div class="plan-head">
+            <div>
+              <div class="plan-title">Core Strength Builder</div>
+              <div style="font-size:var(--text-sm);color:var(--text2);margin-top:5px;font-weight:var(--fw-regular)">Week 2 of 4 · Beginner</div>
+            </div>
+            <div class="plan-badge" style="background:rgba(156,123,255,0.15);color:var(--purple-light)">Scheduled</div>
+          </div>
+          <div class="plan-week-row">
+            <div class="day-circle completed"><span class="day-lbl">M</span>✓</div>
+            <div class="day-circle completed"><span class="day-lbl">T</span>✓</div>
+            <div class="day-circle rest"><span class="day-lbl">W</span>R</div>
+            <div class="day-circle today"><span class="day-lbl">T</span>•</div>
+            <div class="day-circle"><span class="day-lbl">F</span></div>
+            <div class="day-circle rest"><span class="day-lbl">S</span>R</div>
+            <div class="day-circle rest"><span class="day-lbl">S</span>R</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Workout Completion</div>
+            <div class="chart-period">4 Weeks</div>
+          </div>
+          <div id="completionChart"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══ SCREEN 4: VIDEOS ═══ -->
+  <div class="screen" id="screen-videos">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="greeting">From Your Trainer</div>
+        <h1>Videos</h1>
+      </div>
+    </div>
+    <div class="scroll-area">
+
+      <div style="background:linear-gradient(135deg,#1a1040,#2d1b69);border-radius:var(--radius);overflow:hidden;margin-top:8px;cursor:pointer">
+        <div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative;background:linear-gradient(135deg,#0d1b4d,#1e1060)">
+          🏋️
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+            <div style="width:58px;height:58px;background:rgba(255,255,255,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center">
+              <svg width="22" height="22" fill="#1a1040" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+          <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.7);padding:3px 9px;border-radius:8px;font-size:11px;font-weight:600;letter-spacing:0.02em">28:45</div>
+        </div>
+        <div style="padding:16px">
+          <div style="background:rgba(156,123,255,0.2);color:var(--purple-light);display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Featured</div>
+          <div style="font-family:var(--font-display);font-size:var(--text-lg);font-weight:var(--fw-semibold);letter-spacing:var(--ls-tight);line-height:var(--lh-snug)">Complete Upper Body Workout for Fat Loss</div>
+          <div style="font-size:var(--text-sm);color:var(--text2);margin-top:7px;font-weight:var(--fw-regular)">Trainer Rahul · 28 min · Intermediate</div>
+        </div>
+      </div>
+
+      <div class="sec-head" style="margin-top:20px"><h2>Workout Tutorials</h2><a>All ›</a></div>
+      <div class="video-scroll">
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#1a237e,#4a148c)">💪<div class="video-play"><svg width="14" height="14" fill="#1a237e" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">15:20</div>
+          <div class="video-info"><div class="video-title">Bicep & Tricep Superset</div><div class="video-meta">Intermediate · 180 cal</div></div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#004d40,#006064)">🏃<div class="video-play"><svg width="14" height="14" fill="#004d40" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">22:10</div>
+          <div class="video-info"><div class="video-title">HIIT Cardio Blast</div><div class="video-meta">Advanced · 320 cal</div></div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#bf360c,#e64a19)">🦵<div class="video-play"><svg width="14" height="14" fill="#bf360c" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">18:45</div>
+          <div class="video-info"><div class="video-title">Leg Day Destroyer</div><div class="video-meta">Advanced · 260 cal</div></div>
+        </div>
+      </div>
+
+      <div class="sec-head"><h2>Diet & Nutrition</h2><a>All ›</a></div>
+      <div class="video-scroll">
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#33691e,#558b2f)">🥗<div class="video-play"><svg width="14" height="14" fill="#33691e" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">8:30</div>
+          <div class="video-info"><div class="video-title">Meal Prep for Weight Loss</div><div class="video-meta">Trainer Rahul</div></div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#e65100,#f57c00)">🥩<div class="video-play"><svg width="14" height="14" fill="#e65100" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">11:15</div>
+          <div class="video-info"><div class="video-title">High Protein Indian Diet</div><div class="video-meta">Trainer Rahul</div></div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#1565c0,#0d47a1)">💊<div class="video-play"><svg width="14" height="14" fill="#1565c0" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">6:45</div>
+          <div class="video-info"><div class="video-title">Supplements Explained</div><div class="video-meta">Nutrition Guide</div></div>
+        </div>
+      </div>
+
+      <div class="sec-head"><h2>Recovery & Wellness</h2><a>All ›</a></div>
+      <div class="video-scroll">
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#4a148c,#6a1b9a)">🧘<div class="video-play"><svg width="14" height="14" fill="#4a148c" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">20:00</div>
+          <div class="video-info"><div class="video-title">Full Body Yoga Flow</div><div class="video-meta">Beginner Friendly</div></div>
+        </div>
+        <div class="video-card">
+          <div class="video-thumb" style="background:linear-gradient(135deg,#006064,#00838f)">😴<div class="video-play"><svg width="14" height="14" fill="#006064" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div></div>
+          <div class="video-duration">5:00</div>
+          <div class="video-info"><div class="video-title">Sleep & Recovery Tips</div><div class="video-meta">Wellness · 5 min</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ SCREEN 5: PROFILE ═══ -->
+  <div class="screen" id="screen-profile">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="greeting">Settings & Stats</div>
+        <h1>Profile</h1>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="profile-hero">
+        <div class="profile-avatar">A</div>
+        <div class="profile-name">Arjun Singh</div>
+        <div class="profile-tag">Weight Loss · Ludhiana, Punjab 📍</div>
+        <div class="profile-stats">
+          <div class="ps-item">
+            <div class="ps-val">12</div>
+            <div class="ps-lbl">Day Streak</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-val">8</div>
+            <div class="ps-lbl">Workouts</div>
+          </div>
+          <div class="ps-item">
+            <div class="ps-val">3.2</div>
+            <div class="ps-lbl">Kg Lost</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Weight Progress</div>
+          <div class="chart-period">30 Days</div>
+        </div>
+        <div id="weightChart"></div>
+      </div>
+
+      <div class="sec-head"><h2>Body Metrics</h2></div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(41,121,255,0.15)">⚖️</div>
+          <div class="stat-val">82.4</div>
+          <div class="stat-lbl">Weight (kg)</div>
+          <div class="stat-change down">↓ −3.2 kg</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(0,229,160,0.15)">📏</div>
+          <div class="stat-val">178</div>
+          <div class="stat-lbl">Height (cm)</div>
+          <div class="stat-change up">BMI: 26.0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(255,112,67,0.15)">🎯</div>
+          <div class="stat-val">78</div>
+          <div class="stat-lbl">Goal (kg)</div>
+          <div class="stat-change down">4.4 kg left</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(156,123,255,0.15)">📊</div>
+          <div class="stat-val">24%</div>
+          <div class="stat-lbl">Body Fat</div>
+          <div class="stat-change down">↓ −2%</div>
+        </div>
+      </div>
+
+      <div class="sec-head"><h2>Account</h2></div>
+      <div class="pref-section">
+        <div class="pref-item">
+          <div class="pref-icon" style="background:rgba(41,121,255,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#2979ff" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="pref-text"><h4>Edit Profile</h4><p>Name, photo, goals</p></div>
+          <div class="pref-arrow">›</div>
+        </div>
+        <div class="pref-item">
+          <div class="pref-icon" style="background:rgba(0,229,160,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#00e5a0" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div class="pref-text"><h4>Progress Photos</h4><p>Track your transformation</p></div>
+          <div class="pref-arrow">›</div>
+        </div>
+        <div class="pref-item">
+          <div class="pref-icon" style="background:rgba(255,215,64,0.15)">🏆</div>
+          <div class="pref-text"><h4>Achievements</h4><p>3 badges earned</p></div>
+          <div class="pref-arrow">›</div>
+        </div>
+        <div class="pref-item">
+          <div class="pref-icon" style="background:rgba(156,123,255,0.15)">
+            <svg width="18" height="18" fill="none" stroke="#9c7bff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="pref-text"><h4>Notifications</h4><p>Reminders & alerts</p></div>
+          <div class="pref-arrow">›</div>
+        </div>
+        <div class="pref-item">
+          <div class="pref-icon" style="background:rgba(255,112,67,0.15)">🚪</div>
+          <div class="pref-text"><h4>Log Out</h4><p>Sign out of account</p></div>
+          <div class="pref-arrow" style="color:var(--orange)">›</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ BOTTOM NAV ═══ -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="navTo('home')">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <span class="nav-label">Home</span>
+    </div>
+    <div class="nav-item" id="nav-exercises" onclick="navTo('exercises')">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6.5 6.5h11"/><path d="M6 17.5h12"/><circle cx="4" cy="6.5" r="1.5"/><circle cx="20" cy="6.5" r="1.5"/><circle cx="4" cy="17.5" r="1.5"/><circle cx="20" cy="17.5" r="1.5"/><rect x="6" y="10" width="12" height="4" rx="2"/></svg></div>
+      <span class="nav-label">Exercises</span>
+    </div>
+    <div class="nav-item" id="nav-plans" onclick="navTo('plans')">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L3 7l9 5 9-5z"/><path d="M3 17l9 5 9-5"/><path d="M3 12l9 5 9-5"/></svg></div>
+      <span class="nav-label">Plans</span>
+    </div>
+    <div class="nav-item" id="nav-videos" onclick="navTo('videos')">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+      <span class="nav-label">Videos</span>
+    </div>
+    <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
+      <div class="nav-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <span class="nav-label">Profile</span>
+    </div>
+  </nav>
+
+</div>
+
+<!-- ═══ NOTIFICATION PANEL ═══ -->
+<div class="notif-panel" id="notifPanel" onclick="closeNotif(event)">
+  <div class="notif-sheet">
+    <div class="notif-handle"></div>
+    <div class="notif-sheet-title">Notifications</div>
+    <div class="notif-entry">
+      <div class="notif-dot2" style="background:rgba(41,121,255,0.15)">💪</div>
+      <div class="notif-body">
+        <h4>Time to Workout!</h4>
+        <p>Your Upper Body Blast session is scheduled for today.</p>
+        <span>2 min ago</span>
+      </div>
+    </div>
+    <div class="notif-entry">
+      <div class="notif-dot2" style="background:rgba(0,229,160,0.15)">🥗</div>
+      <div class="notif-body">
+        <h4>Lunch Reminder</h4>
+        <p>Don't forget your chicken rice bowl — it's almost 1 PM!</p>
+        <span>28 min ago</span>
+      </div>
+    </div>
+    <div class="notif-entry">
+      <div class="notif-dot2" style="background:rgba(255,215,64,0.15)">🏆</div>
+      <div class="notif-body">
+        <h4>New Badge Earned!</h4>
+        <p>You've reached a 10-day streak. Keep it going!</p>
+        <span>2 hours ago</span>
+      </div>
+    </div>
+    <div class="notif-entry">
+      <div class="notif-dot2" style="background:rgba(156,123,255,0.15)">📹</div>
+      <div class="notif-body">
+        <h4>New Video Available</h4>
+        <p>Trainer Rahul uploaded: "HIIT Cardio for Beginners"</p>
+        <span>Yesterday</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WORKOUT ACTIVE ═══ -->
+<div class="workout-active" id="workoutActive">
+  <div class="wa-top">
+    <div class="wa-close" onclick="closeWorkout()">
+      <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </div>
+    <div>
+      <div class="wa-workout-label">Upper Body Blast</div>
+      <div class="wa-timer" id="workoutTimer">00:00</div>
+    </div>
+    <div style="width:38px"></div>
+  </div>
+  <div class="wa-body">
+    <div class="wa-exercise-big">
+      <span class="wa-emoji">🏋️</span>
+      <div class="wa-ex-name">Bench Press</div>
+      <div class="wa-ex-sub">Exercise 1 of 8 · 4 Sets × 12 Reps</div>
+    </div>
+    <div style="text-align:center;margin:16px 0;font-family:var(--font-body);font-size:10px;font-weight:var(--fw-semibold);color:var(--text2);letter-spacing:var(--ls-wider);text-transform:uppercase">Set Tracker</div>
+    <div class="set-tracker">
+      <div class="set-btn done" id="s1">1</div>
+      <div class="set-btn done" id="s2">2</div>
+      <div class="set-btn" id="s3" onclick="markSet(this)">3</div>
+      <div class="set-btn" id="s4" onclick="markSet(this)">4</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:16px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:var(--text-xs);font-weight:var(--fw-semibold);color:var(--text2);letter-spacing:var(--ls-wide);text-transform:uppercase">Next Exercise</div>
+        <div style="font-size:var(--text-sm);font-weight:var(--fw-medium);color:var(--blue-light)">2 of 8</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:26px">💪</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:var(--text-md);font-weight:var(--fw-semibold);letter-spacing:var(--ls-tight)">Bicep Curls</div>
+          <div style="font-size:var(--text-sm);color:var(--text2);margin-top:3px;font-weight:var(--fw-regular)">3 Sets × 15 Reps</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 20px">
+    <button class="wa-next-btn">
+      <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Next Exercise
+    </button>
+  </div>
+</div>
+
+<script>
+function navTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  const navEl = document.getElementById('nav-' + screen);
+  if (navEl) navEl.classList.add('active');
+  if (screen === 'home' && !chartsInit.home) { initHomeCharts(); chartsInit.home = true; }
+  if (screen === 'exercises' && !chartsInit.exercises) { initExerciseCharts(); chartsInit.exercises = true; }
+  if (screen === 'plans' && !chartsInit.plans) { initPlanCharts(); chartsInit.plans = true; }
+  if (screen === 'profile' && !chartsInit.profile) { initProfileCharts(); chartsInit.profile = true; }
+}
+const chartsInit = {};
+
+function switchPlanTab(el, tabId) {
+  document.querySelectorAll('.plan-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('diet-tab').style.display = tabId === 'diet-tab' ? 'block' : 'none';
+  document.getElementById('workout-tab').style.display = tabId === 'workout-tab' ? 'block' : 'none';
+  if (tabId === 'workout-tab' && !chartsInit.completion) {
+    setTimeout(initCompletionChart, 100);
+    chartsInit.completion = true;
+  }
+}
+
+function openNotif() { document.getElementById('notifPanel').classList.add('open'); }
+function closeNotif(e) { if (e.target === e.currentTarget) document.getElementById('notifPanel').classList.remove('open'); }
+
+let timerInterval;
+function openWorkout() {
+  document.getElementById('workoutActive').classList.add('open');
+  let secs = 0;
+  timerInterval = setInterval(() => {
+    secs++;
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('workoutTimer').textContent = m + ':' + s;
+  }, 1000);
+}
+function closeWorkout() {
+  document.getElementById('workoutActive').classList.remove('open');
+  clearInterval(timerInterval);
+  document.getElementById('workoutTimer').textContent = '00:00';
+}
+function markSet(el) { el.classList.toggle('done'); }
+function toggleMeal(el) { el.classList.toggle('done'); el.textContent = el.classList.contains('done') ? '✓' : ''; }
+
+const cups = document.getElementById('waterCups');
+for(let i=0;i<8;i++){
+  const cup = document.createElement('div');
+  cup.className = 'water-cup' + (i<5?' filled':'');
+  const fill = document.createElement('div');
+  fill.className = 'water-fill';
+  fill.style.height = i<5 ? '70%' : '0%';
+  cup.appendChild(fill);
+  cup.onclick = function(){
+    const f = this.querySelector('.water-fill');
+    const isFilled = this.classList.toggle('filled');
+    f.style.height = isFilled ? '70%' : '0%';
+  };
+  cups.appendChild(cup);
+}
+
+document.querySelectorAll('.ex-cat').forEach(cat => {
+  cat.onclick = function() {
+    document.querySelectorAll('.ex-cat').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  };
+});
+
+const chartDefaults = {
+  chart: { background: 'transparent', toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+  grid: { borderColor: 'rgba(255,255,255,0.06)', strokeDashArray: 4 },
+  tooltip: { theme: 'dark' },
+  xaxis: { labels: { style: { colors: '#6060a0', fontSize: '11px', fontWeight: 500 } }, axisBorder: { show: false }, axisTicks: { show: false } },
+  yaxis: { labels: { style: { colors: '#6060a0', fontSize: '11px', fontWeight: 500 } } },
+};
+
+function initHomeCharts() {
+  new ApexCharts(document.getElementById('calorieChart'), {
+    ...chartDefaults,
+    chart: { ...chartDefaults.chart, type: 'area', height: 160 },
+    series: [{ name: 'Calories Burned', data: [1200,1450,980,1700,1420,1650,1420] }],
+    xaxis: { ...chartDefaults.xaxis, categories: ['Mon','Tue','Wed','Thu','Fri','Sat','Today'] },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.01, stops: [0,100], colorStops: [{ offset: 0, color: '#2979FF', opacity: 0.5 },{ offset: 100, color: '#9C7BFF', opacity: 0 }] } },
+    stroke: { curve: 'smooth', width: 3, colors: ['#2979FF'] },
+    markers: { size: 4, colors: ['#2979FF'], strokeColors: '#1a1a27', strokeWidth: 2 },
+    dataLabels: { enabled: false },
+  }).render();
+}
+
+function initExerciseCharts() {
+  new ApexCharts(document.getElementById('volumeChart'), {
+    ...chartDefaults,
+    chart: { ...chartDefaults.chart, type: 'bar', height: 150 },
+    series: [{ name: 'Volume (kg)', data: [2400,1800,2900,0,3200,0,1500] }],
+    xaxis: { ...chartDefaults.xaxis, categories: ['M','T','W','T','F','S','S'] },
+    fill: { type: 'gradient', gradient: { type: 'vertical', gradientToColors: ['#9C7BFF'], shadeIntensity: 1 } },
+    colors: ['#2979FF'],
+    plotOptions: { bar: { borderRadius: 8, columnWidth: '55%' } },
+    dataLabels: { enabled: false },
+  }).render();
+}
+
+function initPlanCharts() {
+  new ApexCharts(document.getElementById('macroChart'), {
+    ...chartDefaults,
+    chart: { ...chartDefaults.chart, type: 'donut', height: 200 },
+    series: [165, 220, 65],
+    labels: ['Protein', 'Carbs', 'Fats'],
+    colors: ['#2979FF', '#ff9800', '#e91e63'],
+    plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Calories', color: '#a0a0c0', fontSize: '12px', fontFamily: 'Inter, sans-serif', formatter: () => '2,200 kcal' } } } } },
+    dataLabels: { enabled: false },
+    legend: { position: 'bottom', labels: { colors: ['#a0a0c0'] }, fontSize: '12px', fontFamily: 'Inter, sans-serif' },
+  }).render();
+}
+
+function initCompletionChart() {
+  new ApexCharts(document.getElementById('completionChart'), {
+    ...chartDefaults,
+    chart: { ...chartDefaults.chart, type: 'radar', height: 220 },
+    series: [{ name: 'Completion %', data: [90,75,85,60,95,70,80] }],
+    xaxis: { ...chartDefaults.xaxis, categories: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] },
+    fill: { opacity: 0.2, colors: ['#2979FF'] },
+    stroke: { width: 2, colors: ['#2979FF'] },
+    markers: { size: 4, colors: ['#2979FF'] },
+    yaxis: { show: false },
+    plotOptions: { radar: { polygons: { strokeColor: 'rgba(255,255,255,0.1)', fill: { colors: ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.04)'] } } } },
+  }).render();
+}
+
+function initProfileCharts() {
+  new ApexCharts(document.getElementById('weightChart'), {
+    ...chartDefaults,
+    chart: { ...chartDefaults.chart, type: 'line', height: 160 },
+    series: [{ name: 'Weight (kg)', data: [85.6,85.1,84.7,84.3,83.9,83.4,83.1,82.8,82.6,82.4] }],
+    xaxis: { ...chartDefaults.xaxis, categories: ['D1','D4','D7','D10','D13','D16','D19','D22','D25','D28'] },
+    stroke: { curve: 'smooth', width: 3, colors: ['#00e5a0'] },
+    fill: { type: 'gradient', gradient: { shadeIntensity:1, opacityFrom:0.3, opacityTo:0.01, colorStops:[{offset:0,color:'#00e5a0',opacity:0.3},{offset:100,color:'#00e5a0',opacity:0}] } },
+    markers: { size: 4, colors: ['#00e5a0'], strokeColors: '#161620', strokeWidth: 2 },
+    dataLabels: { enabled: false },
+    annotations: {
+      yaxis: [{ y: 78, borderColor: '#ff7043', borderWidth: 1, strokeDashArray: 4, label: { text: 'Goal: 78 kg', style: { background: 'rgba(255,112,67,0.2)', color: '#ff7043', fontSize: '10px', fontFamily: 'Inter, sans-serif' } } }]
+    },
+  }).render();
+}
+
+window.addEventListener('load', () => {
+  initHomeCharts();
+  chartsInit.home = true;
+});
+</script>
+
+</body>
+</html>

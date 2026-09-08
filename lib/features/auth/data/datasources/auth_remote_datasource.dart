@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_constants.dart';
 import '../../../../core/network/error/exceptions.dart';
+import '../models/category_dto.dart';
 import '../models/client_signup_request_dto.dart';
 import '../models/client_signup_response_dto.dart';
 import '../models/login_response_dto.dart';
@@ -14,7 +15,33 @@ final class AuthRemoteDataSource {
 
   final Dio _dio;
 
+  /// Fetches active fitness categories for signup.
+  Future<List<CategoryDto>> fetchCategories() async {
+    try {
+      final response = await _dio.get(ApiConstants.categoryListPath);
+      final data = response.data;
+      if (data == null) {
+        return [];
+      }
+
+      List<dynamic> items = [];
+      if (data is List) {
+        items = data;
+      } else if (data is Map && data.containsKey('results') && data['results'] is List) {
+        items = data['results'] as List<dynamic>;
+      }
+
+      return items
+          .map((item) => CategoryDto.fromJson(item as Map<String, dynamic>))
+          .where((cat) => cat.isActive)
+          .toList();
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
   /// `multipart/form-data` with fields `username` (email) and `password`.
+
   ///
   /// If [isAdmin] is true, the admin login endpoint is used instead of the
   /// regular client login endpoint.

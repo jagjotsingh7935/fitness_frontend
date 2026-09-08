@@ -1,67 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/widgets/exit_confirmation_dialog.dart';
 
 class AdminShellPage extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   const AdminShellPage({super.key, required this.navigationShell});
 
+  void _onTap(int index) => navigationShell.goBranch(
+        index,
+        initialLocation: index == navigationShell.currentIndex,
+      );
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      body: navigationShell,
-      bottomNavigationBar: _buildBottomNav(context),
-    );
-  }
-
-  Widget _buildBottomNav(BuildContext context) {
-    final items = [
-      _NavItem(Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-      _NavItem(Icons.person_outline, Icons.person, 'Trainers'),
-      _NavItem(Icons.people_outline, Icons.people, 'Clients'),
-      _NavItem(Icons.fitness_center_outlined, Icons.fitness_center, 'Exercises'),
-      _NavItem(Icons.fitness_center_outlined, Icons.fitness_center, 'Workouts'),
-      _NavItem(Icons.video_library_outlined, Icons.video_library, 'Videos'),
-      _NavItem(Icons.account_circle_outlined, Icons.account_circle, 'Profile'),
-    ];
-
     final currentIndex = navigationShell.currentIndex;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFFE94560).withOpacity(0.15),
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.6),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              final isSelected = index == currentIndex;
-              return _NavButton(
-                item: item,
-                isSelected: isSelected,
-                onTap: () => navigationShell.goBranch(
-                  index,
-                  initialLocation: index == currentIndex,
+    final navItems = [
+      const _AdminNavItemData('Dashboard', Icons.dashboard_rounded),
+      const _AdminNavItemData('Trainers', Icons.sports_rounded),
+      const _AdminNavItemData('Clients', Icons.people_alt_rounded),
+      const _AdminNavItemData('Exercises', Icons.fitness_center_rounded),
+      const _AdminNavItemData('Workouts', Icons.assignment_rounded),
+      const _AdminNavItemData('Videos', Icons.video_library_rounded),
+      const _AdminNavItemData('Profile', Icons.admin_panel_settings_rounded),
+    ];
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        // If on another tab, route back to Dashboard (tab 0)
+        if (navigationShell.currentIndex != 0) {
+          navigationShell.goBranch(0);
+          return;
+        }
+
+        // If on Dashboard, ask for exit confirmation
+        final shouldExit = await showAppExitConfirmationDialog(context);
+        if (shouldExit) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0D1A),
+        extendBody: false, // Ensure content is NEVER hidden under the bottom bar
+        body: navigationShell,
+        bottomNavigationBar: Container(
+          color: const Color(0xFF0A0D1A),
+          padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+          child: SafeArea(
+            top: false,
+            child: Container(
+              height: 58,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF181E3B),
+                    Color(0xFF0F1326),
+                  ],
                 ),
-              );
-            }),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(navItems.length, (i) {
+                    final item = navItems[i];
+                    final isSelected = i == currentIndex;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2.5),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _onTap(i),
+                          borderRadius: BorderRadius.circular(16),
+                          splashColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                          highlightColor: Colors.transparent,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isSelected ? 12 : 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF6366F1).withValues(alpha: 0.22)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              border: isSelected
+                                  ? Border.all(
+                                      color: const Color(0xFF6366F1).withValues(alpha: 0.45),
+                                      width: 1,
+                                    )
+                                  : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  size: 18,
+                                  color: isSelected
+                                      ? const Color(0xFF818CF8)
+                                      : Colors.white.withValues(alpha: 0.45),
+                                ),
+                                if (isSelected) ...[
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    item.label,
+                                    style: const TextStyle(
+                                      color: Color(0xFF818CF8),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -69,71 +160,9 @@ class AdminShellPage extends StatelessWidget {
   }
 }
 
-class _NavButton extends StatelessWidget {
-  final _NavItem item;
-  final bool isSelected;
-  final VoidCallback onTap;
+class _AdminNavItemData {
+  const _AdminNavItemData(this.label, this.icon);
 
-  const _NavButton({
-    required this.item,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: isSelected
-              ? const Color(0xFFE94560).withOpacity(0.12)
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isSelected ? item.activeIcon : item.icon,
-                key: ValueKey(isSelected),
-                size: 22,
-                color: isSelected
-                    ? const Color(0xFFE94560)
-                    : Colors.white.withOpacity(0.35),
-              ),
-            ),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? const Color(0xFFE94560)
-                    : Colors.white.withOpacity(0.35),
-                letterSpacing: isSelected ? 0.3 : 0,
-              ),
-              child: Text(item.label),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
   final String label;
-
-  const _NavItem(this.icon, this.activeIcon, this.label);
+  final IconData icon;
 }

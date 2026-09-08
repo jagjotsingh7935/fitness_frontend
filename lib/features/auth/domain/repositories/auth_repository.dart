@@ -1,10 +1,14 @@
 import '../../../../core/session/auth_session.dart';
 import '../../../../core/utils/result.dart';
+import '../../data/models/category_dto.dart';
 
 /// Auth operations used by the presentation/domain layers.
 ///
 /// Implementations live in `data/` and map network models to [AuthSession].
 abstract class AuthRepository {
+  /// Fetches active fitness categories for signup.
+  Future<Result<List<CategoryDto>>> fetchCategories();
+
   /// Signs in with email + password (API field name: `username`).
   Future<Result<AuthSession>> loginWithEmailAndPassword({
     required String email,
@@ -27,9 +31,23 @@ abstract class AuthRepository {
     required String email,
     required String firstName,
     required String lastName,
+    String? password,
     required String phone,
     required String dateOfBirth,
     required String address,
     required List<int> categoryIds,
+    String? gender,
+    String? age,
+    dynamic weight,
+    dynamic height,
+    dynamic neckCircumference,
+    dynamic waist,
+    dynamic bmi,
+    dynamic fatPercent,
+    dynamic preferredBmi,
+    dynamic preferredWeight,
+    dynamic preferredWaist,
+    dynamic preferredFatPercent,
   });
 }
+

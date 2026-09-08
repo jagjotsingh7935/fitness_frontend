@@ -6,24 +6,206 @@ import '../widgets/client_scaffold.dart';
 import '../widgets/section_header.dart';
 import '../widgets/video_cards.dart';
 
-class ClientVideosPage extends StatelessWidget {
+class ClientVideosPage extends StatefulWidget {
   const ClientVideosPage({super.key});
 
   @override
+  State<ClientVideosPage> createState() => _ClientVideosPageState();
+}
+
+class _ClientVideosPageState extends State<ClientVideosPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+
+  final List<String> _categories = [
+    'All',
+    'Workout Tutorials',
+    'Diet & Nutrition',
+    'Recovery & Wellness',
+  ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<VideoModel> _filterList(List<VideoModel> source) {
+    if (_searchQuery.isEmpty) return source;
+    final q = _searchQuery.toLowerCase();
+    return source.where((v) {
+      return v.title.toLowerCase().contains(q) ||
+          v.meta.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final workouts = _filterList(DemoClientData.videosWorkoutTutorials);
+    final nutrition = _filterList(DemoClientData.videosDietNutrition);
+    final recovery = _filterList(DemoClientData.videosRecoveryWellness);
+
+    final totalVisible = (_selectedCategory == 'All' || _selectedCategory == 'Workout Tutorials' ? workouts.length : 0) +
+        (_selectedCategory == 'All' || _selectedCategory == 'Diet & Nutrition' ? nutrition.length : 0) +
+        (_selectedCategory == 'All' || _selectedCategory == 'Recovery & Wellness' ? recovery.length : 0);
+
     return ClientScaffold(
       greeting: 'From Your Trainer',
       title: 'Videos',
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) setState(() {});
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _FeaturedVideoCard(),
-          const SectionHeader(title: 'Workout Tutorials', actionLabel: 'All ›'),
-          const VideoCards(items: DemoClientData.videosWorkoutTutorials),
-          const SectionHeader(title: 'Diet & Nutrition', actionLabel: 'All ›'),
-          const VideoCards(items: DemoClientData.videosDietNutrition),
-          const SectionHeader(title: 'Recovery & Wellness', actionLabel: 'All ›'),
-          const VideoCards(items: DemoClientData.videosRecoveryWellness),
+          // 1. Search Bar
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B30),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFFE5C07B).withValues(alpha: 0.25),
+                ),
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                decoration: InputDecoration(
+                  hintText: 'Search video tutorials, guides, trainers...',
+                  hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE5C07B), size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+          ),
+
+          // 2. Category Filter Chips
+          SizedBox(
+            height: 36,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final cat = _categories[index];
+                final isSelected = _selectedCategory == cat;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(
+                      cat,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.white60,
+                        fontSize: 11.5,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFFE94560),
+                    backgroundColor: const Color(0xFF161B30),
+                    side: BorderSide(
+                      color: isSelected ? const Color(0xFFE94560) : Colors.white12,
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    onSelected: (selected) {
+                      if (selected) setState(() => _selectedCategory = cat);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 3. Match Counter & Reset
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Text(
+                  'Showing $totalVisible video${totalVisible == 1 ? '' : 's'}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const Spacer(),
+                if (_searchQuery.isNotEmpty || _selectedCategory != 'All')
+                  GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                        _selectedCategory = 'All';
+                      });
+                    },
+                    child: const Text(
+                      'Reset',
+                      style: TextStyle(color: Color(0xFF00F5A0), fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          if (_searchQuery.isEmpty && _selectedCategory == 'All') ...[
+            _FeaturedVideoCard(),
+            const SizedBox(height: 14),
+          ],
+
+          if (totalVisible == 0)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.videocam_off_rounded, size: 54, color: Colors.white24),
+                    const SizedBox(height: 12),
+                    const Text('No videos match your search', style: TextStyle(color: Colors.white70, fontSize: 15)),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                          _selectedCategory = 'All';
+                        });
+                      },
+                      child: const Text('Clear Filters', style: TextStyle(color: Color(0xFF00F5A0))),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            if ((_selectedCategory == 'All' || _selectedCategory == 'Workout Tutorials') && workouts.isNotEmpty) ...[
+              const SectionHeader(title: 'Workout Tutorials', actionLabel: null),
+              VideoCards(items: workouts),
+              const SizedBox(height: 14),
+            ],
+            if ((_selectedCategory == 'All' || _selectedCategory == 'Diet & Nutrition') && nutrition.isNotEmpty) ...[
+              const SectionHeader(title: 'Diet & Nutrition', actionLabel: null),
+              VideoCards(items: nutrition),
+              const SizedBox(height: 14),
+            ],
+            if ((_selectedCategory == 'All' || _selectedCategory == 'Recovery & Wellness') && recovery.isNotEmpty) ...[
+              const SectionHeader(title: 'Recovery & Wellness', actionLabel: null),
+              VideoCards(items: recovery),
+              const SizedBox(height: 14),
+            ],
+          ],
         ],
       ),
     );

@@ -5,6 +5,7 @@ import '../../../../core/session/auth_session.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
+import '../models/category_dto.dart';
 import '../models/client_signup_request_dto.dart';
 
 /// Bridges remote login + in-memory session storage.
@@ -17,6 +18,18 @@ final class AuthRepositoryImpl implements AuthRepository {
 
   final AuthRemoteDataSource _remote;
   final AuthTokenStore _tokens;
+
+  @override
+  Future<Result<List<CategoryDto>>> fetchCategories() async {
+    try {
+      final categories = await _remote.fetchCategories();
+      return Success(categories);
+    } on AppException catch (e) {
+      return Failed(_mapException(e));
+    } catch (e) {
+      return Failed(UnknownFailure(message: e.toString()));
+    }
+  }
 
   @override
   Future<Result<AuthSession>> loginWithEmailAndPassword({
@@ -33,7 +46,7 @@ final class AuthRepositoryImpl implements AuthRepository {
       final session = dto.toDomain();
 
       // Make Dio auth interceptor attach Bearer token on the next requests.
-      _tokens.applySession(session);
+      await _tokens.applySession(session);
 
       return Success(session);
     } on AppException catch (e) {
@@ -75,8 +88,9 @@ final class AuthRepositoryImpl implements AuthRepository {
     try {
       final dto = await _remote.verifyOtp(email: email, otp: otp);
       final session = dto.toDomain();
-      _tokens.applySession(session);
+      await _tokens.applySession(session);
       return Success(session);
+
     } on AppException catch (e) {
       return Failed(_mapException(e));
     } on FormatException {
@@ -95,10 +109,23 @@ final class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String firstName,
     required String lastName,
+    String? password,
     required String phone,
     required String dateOfBirth,
     required String address,
     required List<int> categoryIds,
+    String? gender,
+    String? age,
+    dynamic weight,
+    dynamic height,
+    dynamic neckCircumference,
+    dynamic waist,
+    dynamic bmi,
+    dynamic fatPercent,
+    dynamic preferredBmi,
+    dynamic preferredWeight,
+    dynamic preferredWaist,
+    dynamic preferredFatPercent,
   }) async {
     try {
       final dto = await _remote.signupClient(
@@ -106,10 +133,23 @@ final class AuthRepositoryImpl implements AuthRepository {
           email: email,
           firstName: firstName,
           lastName: lastName,
+          password: password,
           phone: phone,
           dateOfBirth: dateOfBirth,
           address: address,
           categoryIds: categoryIds,
+          gender: gender,
+          age: age,
+          weight: weight,
+          height: height,
+          neckCircumference: neckCircumference,
+          waist: waist,
+          bmi: bmi,
+          fatPercent: fatPercent,
+          preferredBmi: preferredBmi,
+          preferredWeight: preferredWeight,
+          preferredWaist: preferredWaist,
+          preferredFatPercent: preferredFatPercent,
         ),
       );
       return Success(dto.message);
@@ -142,3 +182,4 @@ final class AuthRepositoryImpl implements AuthRepository {
     return UnknownFailure(message: e.message);
   }
 }
+

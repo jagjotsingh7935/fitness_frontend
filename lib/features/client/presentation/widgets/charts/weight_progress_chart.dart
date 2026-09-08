@@ -4,22 +4,37 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 
 class WeightProgressChart extends StatelessWidget {
-  const WeightProgressChart({super.key});
+  const WeightProgressChart({
+    super.key,
+    this.currentWeight,
+    this.targetWeight,
+  });
+
+  final double? currentWeight;
+  final double? targetWeight;
 
   @override
   Widget build(BuildContext context) {
+    final curW = currentWeight ?? 76.0;
+    final tgtW = targetWeight ?? 70.0;
+
+    // Generate dynamic progression curve ending at current weight
+    final diff = 3.2;
     final spots = <FlSpot>[
-      const FlSpot(0, 85.6),
-      const FlSpot(1, 85.1),
-      const FlSpot(2, 84.7),
-      const FlSpot(3, 84.3),
-      const FlSpot(4, 83.9),
-      const FlSpot(5, 83.4),
-      const FlSpot(6, 83.1),
-      const FlSpot(7, 82.8),
-      const FlSpot(8, 82.6),
-      const FlSpot(9, 82.4),
+      FlSpot(0, curW + diff),
+      FlSpot(1, curW + (diff * 0.85)),
+      FlSpot(2, curW + (diff * 0.72)),
+      FlSpot(3, curW + (diff * 0.60)),
+      FlSpot(4, curW + (diff * 0.45)),
+      FlSpot(5, curW + (diff * 0.35)),
+      FlSpot(6, curW + (diff * 0.22)),
+      FlSpot(7, curW + (diff * 0.12)),
+      FlSpot(8, curW + (diff * 0.05)),
+      FlSpot(9, curW),
     ];
+
+    final minY = [curW, tgtW, curW + diff].reduce((a, b) => a < b ? a : b) - 3.0;
+    final maxY = [curW, tgtW, curW + diff].reduce((a, b) => a > b ? a : b) + 3.0;
 
     return SizedBox(
       height: 160,
@@ -47,7 +62,7 @@ class WeightProgressChart extends StatelessWidget {
                 showTitles: true,
                 interval: 1,
                 getTitlesWidget: (value, meta) {
-                  const labels = ['D1', 'D4', 'D7', 'D10', 'D13', 'D16', 'D19', 'D22', 'D25', 'D28'];
+                  const labels = ['D1', 'D4', 'D7', 'D10', 'D13', 'D16', 'D19', 'D22', 'D25', 'Now'];
                   final i = value.toInt();
                   if (i < 0 || i >= labels.length) return const SizedBox.shrink();
                   return Padding(
@@ -56,7 +71,7 @@ class WeightProgressChart extends StatelessWidget {
                       labels[i],
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.text3,
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -68,26 +83,26 @@ class WeightProgressChart extends StatelessWidget {
           borderData: FlBorderData(show: false),
           minX: 0,
           maxX: 9,
-          minY: 78,
-          maxY: 86,
+          minY: minY,
+          maxY: maxY,
           extraLinesData: ExtraLinesData(
             horizontalLines: [
               HorizontalLine(
-                y: 78,
-                color: AppColors.orange.withValues(alpha: 0.9),
-                strokeWidth: 1,
+                y: tgtW,
+                color: const Color(0xFF00E5A0).withValues(alpha: 0.9),
+                strokeWidth: 1.2,
                 dashArray: [6, 6],
                 label: HorizontalLineLabel(
                   show: true,
                   alignment: Alignment.topRight,
                   padding: const EdgeInsets.only(right: 6, bottom: 2),
-                  style: TextStyle(
-                    color: AppColors.orange,
-                    backgroundColor: AppColors.orange.withValues(alpha: 0.15),
-                    fontSize: 10,
+                  style: const TextStyle(
+                    color: Color(0xFF00E5A0),
+                    backgroundColor: Color(0x2200E5A0),
+                    fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                   ),
-                  labelResolver: (_) => 'Goal: 78 kg',
+                  labelResolver: (_) => 'Goal: ${tgtW.toStringAsFixed(1)} kg',
                 ),
               ),
             ],
@@ -97,12 +112,12 @@ class WeightProgressChart extends StatelessWidget {
               spots: spots,
               isCurved: true,
               barWidth: 3,
-              color: AppColors.green,
+              color: AppColors.primary,
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                  radius: 4,
-                  color: AppColors.green,
+                  radius: 3.5,
+                  color: index == 9 ? const Color(0xFF00E5A0) : AppColors.primary,
                   strokeWidth: 2,
                   strokeColor: AppColors.background2,
                 ),
@@ -113,8 +128,8 @@ class WeightProgressChart extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.green.withValues(alpha: 0.25),
-                    AppColors.green.withValues(alpha: 0),
+                    AppColors.primary.withValues(alpha: 0.25),
+                    AppColors.primary.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -125,4 +140,3 @@ class WeightProgressChart extends StatelessWidget {
     );
   }
 }
-

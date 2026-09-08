@@ -18,6 +18,13 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
 
   final Dio _dio = GetIt.I<DioClient>().dio;
 
+  // Search and Filter state
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedCategory = 'All';
+  String _selectedStatus = 'All'; // 'All', 'Active', 'Inactive'
+  List<String> _availableCategories = ['All'];
+
   // Controllers for add/edit exercise dialog
   final _titleController = TextEditingController();
   final _categoryNamesController = TextEditingController();
@@ -34,12 +41,30 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _titleController.dispose();
     _categoryNamesController.dispose();
     _durationSecondsController.dispose();
     _videoUrlController.dispose();
     _thumbnailUrlController.dispose();
     super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredExercises {
+    return _exercises.where((exercise) {
+      final title = (exercise['title'] ?? '').toString().toLowerCase();
+      final matchesSearch = _searchQuery.isEmpty || title.contains(_searchQuery.toLowerCase());
+
+      final cats = (exercise['category_names'] as List?)?.map((c) => c.toString()).toList() ?? [];
+      final matchesCategory = _selectedCategory == 'All' || cats.contains(_selectedCategory);
+
+      final isActive = exercise['is_active'] == true;
+      final matchesStatus = _selectedStatus == 'All' ||
+          (_selectedStatus == 'Active' && isActive) ||
+          (_selectedStatus == 'Inactive' && !isActive);
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    }).toList();
   }
 
   // Fetch all exercises
@@ -68,18 +93,30 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
 
         print('✅ Exercises fetched: ${exercisesData.length} exercises');
 
+        final list = exercisesData.map((exercise) {
+          return {
+            'id': exercise['id'],
+            'title': exercise['title'] ?? 'Unknown',
+            'thumbnail_url': exercise['thumbnail_url'] ?? '',
+            'duration_seconds': exercise['duration_seconds'] ?? 0,
+            'category_names': exercise['category_names'] ?? [],
+            'video_url': exercise['video_url'] ?? '',
+            'is_active': exercise['is_active'] ?? true,
+          };
+        }).toList();
+
+        final Set<String> allCats = {'All'};
+        for (final ex in list) {
+          for (final c in (ex['category_names'] as List? ?? [])) {
+            if (c.toString().trim().isNotEmpty) {
+              allCats.add(c.toString().trim());
+            }
+          }
+        }
+
         setState(() {
-          _exercises = exercisesData.map((exercise) {
-            return {
-              'id': exercise['id'],
-              'title': exercise['title'] ?? 'Unknown',
-              'thumbnail_url': exercise['thumbnail_url'] ?? '',
-              'duration_seconds': exercise['duration_seconds'] ?? 0,
-              'category_names': exercise['category_names'] ?? [],
-              'video_url': exercise['video_url'] ?? '',
-              'is_active': exercise['is_active'] ?? true,
-            };
-          }).toList();
+          _exercises = list;
+          _availableCategories = allCats.toList();
           _isLoading = false;
         });
       } else {
@@ -464,34 +501,161 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                     ],
                   ),
                 )
-              : _exercises.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              : Column(
+                  children: [
+                    // 1. Search Bar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF161B30),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFE5C07B).withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                          decoration: InputDecoration(
+                            hintText: 'Search exercises by title...',
+                            hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE5C07B), size: 20),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 2. Category Filter Chips
+                    if (_availableCategories.length > 1)
+                      SizedBox(
+                        height: 38,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _availableCategories.length,
+                          itemBuilder: (context, index) {
+                            final cat = _availableCategories[index];
+                            final isSelected = _selectedCategory == cat;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(
+                                  cat,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.white60,
+                                    fontSize: 11.5,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                selectedColor: const Color(0xFFE94560),
+                                backgroundColor: const Color(0xFF161B30),
+                                side: BorderSide(
+                                  color: isSelected ? const Color(0xFFE94560) : Colors.white12,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    setState(() => _selectedCategory = cat);
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                    // 3. Status Filters & Result Count
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Row(
                         children: [
-                          Icon(
-                            Icons.fitness_center,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(height: 16),
                           Text(
-                            'No exercises found',
-                            style: TextStyle(color: Colors.grey),
+                            'Showing ${_filteredExercises.length} of ${_exercises.length} exercises',
+                            style: const TextStyle(color: Colors.white54, fontSize: 11.5, fontWeight: FontWeight.w600),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Tap the + button to add your first exercise',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          const Spacer(),
+                          // Status dropdown / filter
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF161B30),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedStatus,
+                                dropdownColor: const Color(0xFF161B30),
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFE5C07B), size: 18),
+                                style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                                isDense: true,
+                                items: const [
+                                  DropdownMenuItem(value: 'All', child: Text('Status: All')),
+                                  DropdownMenuItem(value: 'Active', child: Text('Active Only')),
+                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive Only')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedStatus = val);
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _exercises.length,
-                      itemBuilder: (context, index) {
-                        final exercise = _exercises[index];
+                    ),
+
+                    // 4. Exercise List View
+                    Expanded(
+                      child: _filteredExercises.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.search_off_rounded, size: 54, color: Colors.white24),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _searchQuery.isNotEmpty || _selectedCategory != 'All' || _selectedStatus != 'All'
+                                        ? 'No exercises match your search/filters'
+                                        : 'No exercises found',
+                                    style: const TextStyle(color: Colors.white60, fontSize: 14),
+                                  ),
+                                  if (_searchQuery.isNotEmpty || _selectedCategory != 'All' || _selectedStatus != 'All') ...[
+                                    const SizedBox(height: 10),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                          _selectedCategory = 'All';
+                                          _selectedStatus = 'All';
+                                        });
+                                      },
+                                      icon: const Icon(Icons.restart_alt_rounded, size: 16, color: Color(0xFF00F5A0)),
+                                      label: const Text('Reset Filters', style: TextStyle(color: Color(0xFF00F5A0), fontSize: 12)),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 80),
+                              itemCount: _filteredExercises.length,
+                              itemBuilder: (context, index) {
+                                final exercise = _filteredExercises[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           color: const Color(0xFF1A1A1A),
@@ -694,6 +858,9 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                         );
                       },
                     ),
+                  ),
+                ],
+              ),
     );
   }
 }

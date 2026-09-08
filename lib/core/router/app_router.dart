@@ -1,9 +1,8 @@
-import 'package:fitness_metabolism_app/features/admin/presentation/pages/admin_exercises_page.dart';
-import 'package:fitness_metabolism_app/features/trainer/presentation/pages/trainer_exercise.dart';
-import 'package:fitness_metabolism_app/features/trainer/presentation/pages/trainer_profile_page.dart';
-import 'package:fitness_metabolism_app/features/trainer/presentation/pages/trainer_workout.dart';
+import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
+import '../auth/auth_token_store.dart';
 import '../../features/auth/presentation/client_signup_page.dart';
 import '../../features/auth/presentation/login_otp_page.dart';
 import '../../features/auth/presentation/login_page.dart';
@@ -18,7 +17,7 @@ import '../../features/admin/presentation/admin_shell_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/admin_trainers_page.dart';
 import '../../features/admin/presentation/pages/admin_clients_page.dart';
-import '../../features/admin/presentation/pages/admin_diet_plans_page.dart';
+import '../../features/admin/presentation/pages/admin_exercises_page.dart';
 import '../../features/admin/presentation/pages/admin_workouts_page.dart';
 import '../../features/admin/presentation/pages/admin_videos_page.dart';
 import '../../features/admin/presentation/pages/admin_profile_page.dart';
@@ -26,6 +25,7 @@ import '../../features/trainer/presentation/trainer_shell_page.dart';
 import '../../features/trainer/presentation/pages/trainer_clients_page.dart';
 import '../../features/trainer/presentation/pages/trainer_dashboard_page.dart';
 import '../../features/trainer/presentation/pages/trainer_exercise.dart';
+import '../../features/trainer/presentation/pages/trainer_profile_page.dart';
 import '../../features/trainer/presentation/pages/trainer_workout.dart';
 
 class AppRouter {
@@ -37,9 +37,169 @@ class AppRouter {
   static const adminPath = '/admin';
   static const trainerPath = '/trainer';
 
-  static GoRouter router = GoRouter(
-    initialLocation: loginPath,
+  static String _determineInitialLocation() {
+    if (!GetIt.I.isRegistered<AuthTokenStore>()) {
+      return loginPath;
+    }
+    final tokenStore = GetIt.I<AuthTokenStore>();
+    if (!tokenStore.isAuthenticated) {
+      return loginPath;
+    }
+
+    final lastLoc = tokenStore.lastLocation;
+    if (lastLoc != null &&
+        lastLoc.isNotEmpty &&
+        lastLoc != '/' &&
+        (lastLoc.startsWith(adminPath) ||
+            lastLoc.startsWith(trainerPath) ||
+            lastLoc.startsWith(clientPath))) {
+      return lastLoc;
+    }
+
+    final user = tokenStore.user;
+    if (user != null) {
+      if (user.isAdmin) return adminPath;
+      if (user.isTrainer) return trainerPath;
+      return clientPath;
+    }
+
+    return clientPath;
+  }
+
+  static GoRouter? _instance;
+
+  static GoRouter get router {
+    _instance ??= _buildRouter();
+    return _instance!;
+  }
+
+  static GoRouter _buildRouter() {
+    return GoRouter(
+      initialLocation: _determineInitialLocation(),
+      errorBuilder: (context, state) {
+        return Scaffold(
+          backgroundColor: const Color(0xFF0A0D1A),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_off_rounded, color: Color(0xFFFF4B72), size: 54),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Page Not Found',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Path: ${state.uri.path}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      final tokenStore = GetIt.I.isRegistered<AuthTokenStore>()
+                          ? GetIt.I<AuthTokenStore>()
+                          : null;
+                      if (tokenStore == null || !tokenStore.isAuthenticated) {
+                        context.go(AppRouter.loginPath);
+                      } else {
+                        final user = tokenStore.user;
+                        if (user != null && user.isAdmin) {
+                          context.go(AppRouter.adminPath);
+                        } else if (user != null && user.isTrainer) {
+                          context.go(AppRouter.trainerPath);
+                        } else {
+                          context.go(AppRouter.clientPath);
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF4B72),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Return to Home', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      redirect: (context, state) {
+        if (!GetIt.I.isRegistered<AuthTokenStore>()) return null;
+
+        final tokenStore = GetIt.I<AuthTokenStore>();
+        final isLoggingIn = state.matchedLocation.startsWith(loginPath);
+
+        if (!tokenStore.isAuthenticated) {
+          return isLoggingIn ? null : loginPath;
+        }
+
+        // Handle root / navigation
+        if (state.matchedLocation == '/') {
+          final user = tokenStore.user;
+          if (user != null) {
+            if (user.isAdmin) return adminPath;
+            if (user.isTrainer) return trainerPath;
+          }
+          return clientPath;
+        }
+
+        // If authenticated and trying to navigate to login, redirect to active portal
+        if (isLoggingIn) {
+          final lastLoc = tokenStore.lastLocation;
+          if (lastLoc != null &&
+              lastLoc.isNotEmpty &&
+              lastLoc != '/' &&
+              !lastLoc.startsWith('/login')) {
+            return lastLoc;
+          }
+          final user = tokenStore.user;
+          if (user != null) {
+            if (user.isAdmin) return adminPath;
+            if (user.isTrainer) return trainerPath;
+          }
+          return clientPath;
+        }
+
+        // Save last location whenever navigating to a valid non-login route
+        if (state.matchedLocation != '/') {
+          tokenStore.saveLastLocation(state.matchedLocation);
+        }
+
+        return null;
+      },
+
     routes: <RouteBase>[
+      // Root route redirect
+      GoRoute(
+        path: '/',
+        redirect: (context, state) {
+          final tokenStore = GetIt.I.isRegistered<AuthTokenStore>()
+              ? GetIt.I<AuthTokenStore>()
+              : null;
+          if (tokenStore == null || !tokenStore.isAuthenticated) {
+            return AppRouter.loginPath;
+          }
+          final user = tokenStore.user;
+          if (user != null) {
+            if (user.isAdmin) return AppRouter.adminPath;
+            if (user.isTrainer) return AppRouter.trainerPath;
+          }
+          return AppRouter.clientPath;
+        },
+      ),
+
+      // Trainer progress alias
+      GoRoute(
+        path: '/trainer/progress',
+        redirect: (context, state) => '$trainerPath/clients',
+      ),
+
       // Login routes
       GoRoute(
         path: loginPath,
@@ -239,15 +399,6 @@ class AppRouter {
               ),
             ],
           ),
-          // StatefulShellBranch(
-          //   routes: <RouteBase>[
-          //     GoRoute(
-          //       path: '$trainerPath/nutrition',
-          //       name: 'trainer_nutrition',
-          //       builder: (context, state) => const TrainerNutritionPage(),
-          //     ),
-          //   ],
-          // ),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -261,4 +412,5 @@ class AppRouter {
       ),
     ],
   );
+  }
 }

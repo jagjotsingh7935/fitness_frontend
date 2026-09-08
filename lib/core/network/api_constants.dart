@@ -20,6 +20,13 @@ abstract final class ApiConstants {
   /// Client self-registration (JSON body, optionally authenticated).
   static const String clientSignupPath = '/accounts/api/signup/client/';
 
+  /// Public active categories list for signup/profiles.
+  static const String categoryListPath = '/accounts/api/category-list/';
+
+  /// Current authenticated user profile (GET/PATCH)
+  static const String currentUserPath = '/accounts/api/me/';
+
   // Other examples (extend as features grow).
   static const String user = '/user';
+
 }

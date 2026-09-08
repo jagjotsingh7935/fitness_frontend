@@ -1,67 +1,115 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/widgets/exit_confirmation_dialog.dart';
 
 class TrainerShellPage extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   const TrainerShellPage({super.key, required this.navigationShell});
 
+  void _onTap(int index) => navigationShell.goBranch(
+        index,
+        initialLocation: index == navigationShell.currentIndex,
+      );
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
-      body: navigationShell,
-      bottomNavigationBar: _buildBottomNav(context),
-    );
-  }
-
-  static const _navItems = [
-    _NavItem(Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
-    _NavItem(Icons.trending_up_outlined, Icons.trending_up, 'Progress'),
-    _NavItem(Icons.library_books_outlined, Icons.library_books, 'Exercises'),
-    _NavItem(Icons.assignment_outlined, Icons.assignment, 'Plans'),
-    _NavItem(Icons.person_outline, Icons.person, 'Profile'),
-  ];
-
-  Widget _buildBottomNav(BuildContext context) {
     final currentIndex = navigationShell.currentIndex;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF111111),
-        border: Border(
-          top: BorderSide(
-            color: const Color(0xFFE94560).withOpacity(0.15),
-            width: 1,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.6),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_navItems.length, (index) {
-              final item = _navItems[index];
-              final isSelected = index == currentIndex;
-              return Expanded(
-                child: _NavButton(
-                  item: item,
-                  isSelected: isSelected,
-                  onTap: () => navigationShell.goBranch(
-                    index,
-                    initialLocation: index == currentIndex,
-                  ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        // If on another tab, route back to Dashboard (tab 0)
+        if (navigationShell.currentIndex != 0) {
+          navigationShell.goBranch(0);
+          return;
+        }
+
+        // If on Dashboard, ask for exit confirmation
+        final shouldExit = await showAppExitConfirmationDialog(context);
+        if (shouldExit) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0D1A),
+        extendBody: true,
+        body: navigationShell,
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF181E3B),
+                  Color(0xFF0F1326),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 25,
+                  offset: const Offset(0, 10),
                 ),
-              );
-            }),
+                BoxShadow(
+                  color: const Color(0xFFFF4B72).withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  spreadRadius: -2,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _TrainerNavItem(
+                  index: 0,
+                  currentIndex: currentIndex,
+                  label: 'Dashboard',
+                  icon: Icons.dashboard_rounded,
+                  onTap: () => _onTap(0),
+                ),
+                _TrainerNavItem(
+                  index: 1,
+                  currentIndex: currentIndex,
+                  label: 'Clients',
+                  icon: Icons.people_alt_rounded,
+                  onTap: () => _onTap(1),
+                ),
+                _TrainerNavItem(
+                  index: 2,
+                  currentIndex: currentIndex,
+                  label: 'Exercises',
+                  icon: Icons.fitness_center_rounded,
+                  onTap: () => _onTap(2),
+                ),
+                _TrainerNavItem(
+                  index: 3,
+                  currentIndex: currentIndex,
+                  label: 'Routines',
+                  icon: Icons.assignment_rounded,
+                  onTap: () => _onTap(3),
+                ),
+                _TrainerNavItem(
+                  index: 4,
+                  currentIndex: currentIndex,
+                  label: 'Profile',
+                  icon: Icons.person_rounded,
+                  onTap: () => _onTap(4),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -69,70 +117,77 @@ class TrainerShellPage extends StatelessWidget {
   }
 }
 
-class _NavButton extends StatelessWidget {
-  final _NavItem item;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _NavButton({
-    required this.item,
-    required this.isSelected,
+class _TrainerNavItem extends StatelessWidget {
+  const _TrainerNavItem({
+    required this.index,
+    required this.currentIndex,
+    required this.label,
+    required this.icon,
     required this.onTap,
   });
 
+  final int index;
+  final int currentIndex;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: isSelected
-              ? const Color(0xFFE94560).withOpacity(0.12)
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                isSelected ? item.activeIcon : item.icon,
-                key: ValueKey(isSelected),
-                size: 22,
+    final isSelected = index == currentIndex;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        splashColor: const Color(0xFFFF4B72).withValues(alpha: 0.15),
+        highlightColor: Colors.transparent,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(
+            horizontal: isSelected ? 12 : 8,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFFF4B72).withValues(alpha: 0.16)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+            border: isSelected
+                ? Border.all(
+                    color: const Color(0xFFFF4B72).withValues(alpha: 0.35),
+                    width: 1,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 21,
                 color: isSelected
-                    ? const Color(0xFFE94560)
-                    : Colors.white.withOpacity(0.35),
+                    ? const Color(0xFFFF4B72)
+                    : Colors.white.withValues(alpha: 0.45),
               ),
-            ),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                color: isSelected
-                    ? const Color(0xFFE94560)
-                    : Colors.white.withOpacity(0.35),
-                letterSpacing: isSelected ? 0.3 : 0,
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? const Color(0xFFFF4B72)
+                      : Colors.white.withValues(alpha: 0.45),
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  fontSize: 10,
+                  letterSpacing: -0.2,
+                ),
               ),
-              child: Text(item.label),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-
-  const _NavItem(this.icon, this.activeIcon, this.label);
 }

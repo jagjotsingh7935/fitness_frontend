@@ -1,14 +1,31 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../session/auth_session.dart';
 
-/// Holds the current session in memory for the running app.
-///
-/// [accessToken] is read by [DioClient]'s token provider so authenticated
-/// requests automatically send `Authorization: Bearer ...`.
-///
-/// For production, persist [refreshToken] (and optionally [user]) with
-/// `flutter_secure_storage` and restore on startup.
+/// Holds and persists the current auth session and last visited route.
 final class AuthTokenStore {
+  AuthTokenStore({SharedPreferences? prefs}) : _prefs = prefs;
+
+  SharedPreferences? _prefs;
   AuthSession? _session;
+  String? _lastLocation;
+
+  static const String _sessionKey = 'app_auth_session';
+  static const String _lastLocationKey = 'app_last_location';
+
+  Future<void> init(SharedPreferences prefs) async {
+    _prefs = prefs;
+    final sessionJson = _prefs?.getString(_sessionKey);
+    if (sessionJson != null && sessionJson.isNotEmpty) {
+      try {
+        final map = jsonDecode(sessionJson) as Map<String, dynamic>;
+        _session = AuthSession.fromJson(map);
+      } catch (e) {
+        print('Error restoring auth session: $e');
+      }
+    }
+    _lastLocation = _prefs?.getString(_lastLocationKey);
+  }
 
   /// JWT used on API calls; `null` when logged out.
   String? get accessToken => _session?.accessToken;
@@ -17,11 +34,39 @@ final class AuthTokenStore {
 
   AuthenticatedUser? get user => _session?.user;
 
-  void applySession(AuthSession session) {
+  AuthSession? get session => _session;
+
+  bool get isAuthenticated => _session != null && _session!.accessToken.isNotEmpty;
+
+  String? get lastLocation => _lastLocation;
+
+  Future<void> applySession(AuthSession session) async {
     _session = session;
+    if (_prefs != null) {
+      try {
+        final jsonStr = jsonEncode(session.toJson());
+        await _prefs!.setString(_sessionKey, jsonStr);
+      } catch (e) {
+        print('Error saving auth session: $e');
+      }
+    }
   }
 
-  void clear() {
+  Future<void> saveLastLocation(String location) async {
+    if (location.startsWith('/login')) return; // Do not save login pages
+    _lastLocation = location;
+    if (_prefs != null) {
+      await _prefs!.setString(_lastLocationKey, location);
+    }
+  }
+
+  Future<void> clear() async {
     _session = null;
+    _lastLocation = null;
+    if (_prefs != null) {
+      await _prefs!.remove(_sessionKey);
+      await _prefs!.remove(_lastLocationKey);
+    }
   }
 }
+

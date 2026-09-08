@@ -29,92 +29,190 @@ class GoalHeroCard extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1A2AFF),
-            Color(0xFF7C3AED),
-            Color(0xFF9C27B0),
+            Color(0xFF161C33),
+            Color(0xFF101426),
+            Color(0xFF0C0E1B),
           ],
         ),
+        border: Border.all(
+          color: const Color(0xFFE5C07B).withValues(alpha: 0.28),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE5C07B).withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.55),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Stack(
         children: [
+          // Ambient Glows
           Positioned(
             top: -40,
             right: -40,
-            child: _Bubble(size: 160, alpha: 0.07),
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE5C07B).withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           ),
           Positioned(
             bottom: -30,
-            left: 20,
-            child: _Bubble(size: 100, alpha: 0.05),
+            left: -20,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF00F5A0).withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           ),
+
+          // Content
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Top Goal Badge + Flame
               Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: const Color(0xFFE5C07B).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: const Color(0xFFE5C07B).withValues(alpha: 0.4),
                       ),
                     ),
-                    child: Text(
-                      goalBadge.toUpperCase(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.workspace_premium_rounded,
+                          size: 13,
+                          color: Color(0xFFE5C07B),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          goalBadge.toUpperCase(),
+                          style: const TextStyle(
+                            color: Color(0xFFE5C07B),
+                            fontWeight: FontWeight.w900,
                             fontSize: 10,
                             letterSpacing: 1.2,
                           ),
+                        ),
+                      ],
                     ),
                   ),
                   const Spacer(),
-                  const Text('🔥', style: TextStyle(fontSize: 26)),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF5252).withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFFF5252).withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: const Text('🔥', style: TextStyle(fontSize: 18)),
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // Title and target subtitle
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                    ),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.4,
+                  height: 1.1,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      height: 1.6,
-                    ),
-              ),
-              const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(child: _GoalStat(value: burned, label: 'Burned')),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE5C07B),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // 3 Stat Boxes
+              Row(
+                children: [
+                  Expanded(
+                    child: _GoalStat(
+                      value: burned,
+                      label: 'Burned',
+                      accentColor: const Color(0xFFFF5252),
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _GoalStat(value: remaining, label: 'Remaining')),
+                  Expanded(
+                    child: _GoalStat(
+                      value: remaining,
+                      label: 'Remaining',
+                      accentColor: const Color(0xFFE5C07B),
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _GoalStat(
                       value: '$donePct%',
                       label: 'Done',
+                      accentColor: const Color(0xFF00F5A0),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
+
+              // Progress ring & Motivation
               Row(
                 children: [
                   _ProgressRing(pct: pct, label: '$donePct%'),
@@ -123,51 +221,63 @@ class GoalHeroCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Keep pushing!',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            fontSize: 15,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           "3 exercises left today.\nYou're on track! 💪",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                height: 1.3,
-                              ),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
                         ),
-                        const SizedBox(height: 10),
-                        FilledButton.tonal(
-                          onPressed: onStartWorkout,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(alpha: 0.18),
-                            foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.28),
-                            ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: onStartWorkout,
+                          child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
+                              horizontal: 18,
                               vertical: 10,
                             ),
-                            shape: RoundedRectangleBorder(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFFE94560),
+                                  Color(0xFFC72A48),
+                                ],
+                              ),
                               borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFE94560).withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            textStyle: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11,
-                              letterSpacing: 0.3,
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.play_arrow_rounded, size: 16, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Start Workout',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11.5,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.play_arrow, size: 14),
-                              SizedBox(width: 6),
-                              Text('Start Workout'),
-                            ],
                           ),
                         ),
                       ],
@@ -183,58 +293,49 @@ class GoalHeroCard extends StatelessWidget {
   }
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.size, required this.alpha});
-  final double size;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: alpha),
-      ),
-    );
-  }
-}
-
 class _GoalStat extends StatelessWidget {
-  const _GoalStat({required this.value, required this.label});
+  const _GoalStat({
+    required this.value,
+    required this.label,
+    required this.accentColor,
+  });
 
   final String value;
   final String label;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: const Color(0xFF161B30),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.22),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
           Text(
             value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                  color: Colors.white,
-                ),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              height: 1,
+              color: accentColor,
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             label.toUpperCase(),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+              color: Colors.white.withValues(alpha: 0.55),
+            ),
           ),
         ],
       ),
@@ -260,21 +361,22 @@ class _ProgressRing extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                      color: Colors.white,
-                    ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                  height: 1,
+                  color: Color(0xFF00F5A0),
+                ),
               ),
-              const SizedBox(height: 1),
+              const SizedBox(height: 2),
               Text(
                 'DONE',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
+                style: TextStyle(
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: const Color(0xFFE5C07B).withValues(alpha: 0.8),
+                ),
               ),
             ],
           ),
@@ -295,23 +397,26 @@ class _RingPainter extends CustomPainter {
 
     final trackPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
+      ..strokeWidth = 7.5
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: 0.15);
+      ..color = Colors.white.withValues(alpha: 0.08);
 
     final rect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, trackPaint);
 
     final sweep = (math.pi * 2) * pct.clamp(0, 1);
     final shader = const LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [Colors.white, Color(0xFFC4B5FD)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFF00F5A0),
+        Color(0xFFE5C07B),
+      ],
     ).createShader(rect);
 
     final progressPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
+      ..strokeWidth = 7.5
       ..strokeCap = StrokeCap.round
       ..shader = shader;
 

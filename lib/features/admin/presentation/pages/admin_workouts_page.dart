@@ -17,6 +17,12 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
 
   final Dio _dio = GetIt.I<DioClient>().dio;
 
+  // Search & Filter state
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  int _selectedDayFilter = -1; // -1 = All Days
+  String _selectedStatus = 'All'; // 'All', 'Active', 'Inactive'
+
   // Controllers for add/edit workout plan dialog
   final _clientController = TextEditingController();
   final _exerciseController = TextEditingController();
@@ -60,6 +66,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _clientController.dispose();
     _exerciseController.dispose();
     _setsController.dispose();
@@ -68,6 +75,32 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
     _orderController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredWorkoutPlans {
+    return _workoutPlans.where((plan) {
+      final client = (plan['client_name'] ?? '').toString().toLowerCase();
+      final trainer = (plan['trainer_name'] ?? '').toString().toLowerCase();
+      final exDetail = plan['exercise_detail'];
+      final exTitle = (exDetail is Map ? (exDetail['title'] ?? '') : '').toString().toLowerCase();
+      final notes = (plan['notes'] ?? '').toString().toLowerCase();
+      final query = _searchQuery.toLowerCase();
+
+      final matchesSearch = query.isEmpty ||
+          client.contains(query) ||
+          trainer.contains(query) ||
+          exTitle.contains(query) ||
+          notes.contains(query);
+
+      final matchesDay = _selectedDayFilter == -1 || plan['day_of_week'] == _selectedDayFilter;
+
+      final isActive = plan['is_active'] == true;
+      final matchesStatus = _selectedStatus == 'All' ||
+          (_selectedStatus == 'Active' && isActive) ||
+          (_selectedStatus == 'Inactive' && !isActive);
+
+      return matchesSearch && matchesDay && matchesStatus;
+    }).toList();
   }
 
   // Fetch all workout plans
@@ -453,6 +486,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                 ],
                               )
                             : DropdownButtonFormField<int>(
+                                isExpanded: true,
                                 value: _selectedClientId,
                                 decoration: const InputDecoration(
                                   labelText: 'Select Client *',
@@ -463,7 +497,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                   ..._clients.map((client) {
                                     return DropdownMenuItem(
                                       value: client['id'],
-                                      child: Text(client['name']),
+                                      child: Text(client['name'], overflow: TextOverflow.ellipsis),
                                     );
                                   }),
                                 ],
@@ -493,6 +527,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                 ],
                               )
                             : DropdownButtonFormField<int>(
+                                isExpanded: true,
                                 value: _selectedExerciseId,
                                 decoration: const InputDecoration(
                                   labelText: 'Select Exercise *',
@@ -503,7 +538,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                   ..._exercises.map((exercise) {
                                     return DropdownMenuItem(
                                       value: exercise['id'],
-                                      child: Text(exercise['title']),
+                                      child: Text(exercise['title'], overflow: TextOverflow.ellipsis),
                                     );
                                   }),
                                 ],
@@ -517,6 +552,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                     
                     // Day of Week Dropdown
                     DropdownButtonFormField<int>(
+                      isExpanded: true,
                       value: _selectedDayOfWeek,
                       decoration: const InputDecoration(
                         labelText: 'Day of Week *',
@@ -702,34 +738,183 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                     ],
                   ),
                 )
-              : _workoutPlans.isEmpty
-                  ? const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              : Column(
+                  children: [
+                    // 1. Search Bar
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF161B30),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFE94560).withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                          decoration: InputDecoration(
+                            hintText: 'Search by client, coach, exercise, or notes...',
+                            hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE94560), size: 20),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 2. Day-of-Week Filter Chips
+                    SizedBox(
+                      height: 38,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         children: [
-                          Icon(
-                            Icons.fitness_center,
-                            size: 64,
-                            color: Colors.grey,
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(
+                                'All Days',
+                                style: TextStyle(
+                                  color: _selectedDayFilter == -1 ? Colors.white : Colors.white60,
+                                  fontSize: 11.5,
+                                  fontWeight: _selectedDayFilter == -1 ? FontWeight.w800 : FontWeight.w500,
+                                ),
+                              ),
+                              selected: _selectedDayFilter == -1,
+                              selectedColor: const Color(0xFFE94560),
+                              backgroundColor: const Color(0xFF161B30),
+                              side: BorderSide(
+                                color: _selectedDayFilter == -1 ? const Color(0xFFE94560) : Colors.white12,
+                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              onSelected: (selected) {
+                                if (selected) setState(() => _selectedDayFilter = -1);
+                              },
+                            ),
                           ),
-                          SizedBox(height: 16),
+                          ..._daysOfWeek.map((dayMap) {
+                            final dayIndex = dayMap.keys.first;
+                            final dayName = dayMap.values.first;
+                            final isSelected = _selectedDayFilter == dayIndex;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(
+                                  dayName,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.white60,
+                                    fontSize: 11.5,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                  ),
+                                ),
+                                selected: isSelected,
+                                selectedColor: const Color(0xFFE94560),
+                                backgroundColor: const Color(0xFF161B30),
+                                side: BorderSide(
+                                  color: isSelected ? const Color(0xFFE94560) : Colors.white12,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                onSelected: (selected) {
+                                  if (selected) setState(() => _selectedDayFilter = dayIndex);
+                                },
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+
+                    // 3. Status Filters + Results Count
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Row(
+                        children: [
                           Text(
-                            'No workout plans found',
-                            style: TextStyle(color: Colors.grey),
+                            'Showing ${_filteredWorkoutPlans.length} of ${_workoutPlans.length} workout routines',
+                            style: const TextStyle(color: Colors.white54, fontSize: 11.5, fontWeight: FontWeight.w600),
                           ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Tap the + button to add your first workout plan',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          const Spacer(),
+                          // Status filter
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF161B30),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedStatus,
+                                dropdownColor: const Color(0xFF161B30),
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFE94560), size: 18),
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                                isDense: true,
+                                items: const [
+                                  DropdownMenuItem(value: 'All', child: Text('Status: All')),
+                                  DropdownMenuItem(value: 'Active', child: Text('Active Only')),
+                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive Only')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedStatus = val);
+                                },
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _workoutPlans.length,
-                      itemBuilder: (context, index) {
-                        final plan = _workoutPlans[index];
+                    ),
+
+                    // 4. List View
+                    Expanded(
+                      child: _filteredWorkoutPlans.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.fitness_center_rounded, size: 54, color: Colors.white24),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _searchQuery.isNotEmpty || _selectedDayFilter != -1 || _selectedStatus != 'All'
+                                        ? 'No workout routines match your search/filters'
+                                        : 'No workout plans found',
+                                    style: const TextStyle(color: Colors.white60, fontSize: 14),
+                                  ),
+                                  if (_searchQuery.isNotEmpty || _selectedDayFilter != -1 || _selectedStatus != 'All') ...[
+                                    const SizedBox(height: 10),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                          _selectedDayFilter = -1;
+                                          _selectedStatus = 'All';
+                                        });
+                                      },
+                                      icon: const Icon(Icons.restart_alt_rounded, size: 16, color: Color(0xFF00F5A0)),
+                                      label: const Text('Reset Filters', style: TextStyle(color: Color(0xFF00F5A0), fontSize: 12)),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                              itemCount: _filteredWorkoutPlans.length,
+                              itemBuilder: (context, index) {
+                                final plan = _filteredWorkoutPlans[index];
                         final clientName = plan['client_name'] ?? 'Unknown';
                         final exerciseDetail = plan['exercise_detail'];
                         final exerciseTitle = exerciseDetail?['title'] ?? 'Unknown';
@@ -891,6 +1076,9 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                         );
                       },
                     ),
+                  ),
+                ],
+              ),
     );
   }
 

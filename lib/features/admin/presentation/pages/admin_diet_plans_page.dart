@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/searchable_dropdown.dart';
 
 class AdminDietPlansPage extends StatefulWidget {
   const AdminDietPlansPage({super.key});
@@ -710,32 +711,23 @@ class _DietPlanFormSheetState extends State<_DietPlanFormSheet> {
                     // Client Selector
                     const Text('Assign to Client *', style: TextStyle(color: Color(0xFFE5C07B), fontWeight: FontWeight.w700, fontSize: 12)),
                     const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F1322),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          isExpanded: true,
-                          value: _selectedClientId,
-                          hint: const Text('Select a Client', style: TextStyle(color: Colors.white38, fontSize: 13)),
-                          dropdownColor: const Color(0xFF161B30),
-                          items: widget.clients.map((c) {
-                            final id = c['id'] as int;
-                            final name = c['user_full_name'] ?? c['name'] ?? 'Client #$id';
-                            final email = c['user_email'] ?? c['email'] ?? '';
-                            return DropdownMenuItem<int>(
-                              value: id,
-                              child: Text('$name ($email)',
-                                  style: const TextStyle(color: Colors.white, fontSize: 13)),
-                            );
-                          }).toList(),
-                          onChanged: (val) => setState(() => _selectedClientId = val),
-                        ),
-                      ),
+                    SearchableDropdown<int>(
+                      value: _selectedClientId,
+                      hintText: 'Select a Client',
+                      searchHint: 'Search client name or email...',
+                      fillColor: const Color(0xFF0F1322),
+                      allowClear: true,
+                      items: widget.clients.map((c) {
+                        final id = c['id'] as int;
+                        final name = c['user_full_name'] ?? c['name'] ?? 'Client #$id';
+                        final email = c['user_email'] ?? c['email'] ?? '';
+                        return SearchableDropdownItem<int>(
+                          value: id,
+                          label: name,
+                          subtitle: email.isNotEmpty ? email : null,
+                        );
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedClientId = val),
                     ),
                     const SizedBox(height: 16),
 

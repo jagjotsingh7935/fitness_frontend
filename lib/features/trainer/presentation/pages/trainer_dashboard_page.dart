@@ -29,9 +29,10 @@ class _TopClient {
 
 class _SatisfactionEntry {
   final String month;
-  final double rating; // 0.0 – 5.0
+  final double rating; // numeric value for chart plotting
+  final int count; // actual activity count
 
-  const _SatisfactionEntry(this.month, this.rating);
+  const _SatisfactionEntry(this.month, this.rating, [this.count = 0]);
 }
 
 // ─────────────────────────────────────────────
@@ -65,15 +66,65 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
   // ── Top Clients ──────────────────────────────
   List<_TopClient> _topClients = [];
 
-  // ── Satisfaction Chart ────────────────────────
-  final List<_SatisfactionEntry> _satisfaction = const [
-    _SatisfactionEntry('Jan', 4.5),
-    _SatisfactionEntry('Feb', 4.6),
-    _SatisfactionEntry('Mar', 4.8),
-    _SatisfactionEntry('Apr', 4.7),
-    _SatisfactionEntry('May', 4.9),
-    _SatisfactionEntry('Jun', 4.8),
+  // ── Activity & Trend Chart (Dynamic Real Data) ──
+  static const List<String> _monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
+
+  List<_SatisfactionEntry> _satisfaction = _generateDefaultTrend();
+
+  static List<_SatisfactionEntry> _generateDefaultTrend() {
+    final now = DateTime.now();
+    return List.generate(6, (i) {
+      final mIndex = (now.month - 6 + i + 12) % 12;
+      return _SatisfactionEntry(_monthNames[mIndex], 0.0, 0);
+    });
+  }
+
+  List<_SatisfactionEntry> _computeActivityTrend(List<dynamic> plans, List<dynamic> masterPlans) {
+    final now = DateTime.now();
+    final months = <DateTime>[];
+    for (int i = 5; i >= 0; i--) {
+      var y = now.year;
+      var m = now.month - i;
+      while (m <= 0) {
+        m += 12;
+        y -= 1;
+      }
+      months.add(DateTime(y, m, 1));
+    }
+
+    final counts = List<int>.filled(6, 0);
+
+    void processItems(List<dynamic> items) {
+      for (final item in items) {
+        if (item is Map) {
+          final rawDate = item['created_at']?.toString();
+          if (rawDate != null && rawDate.isNotEmpty) {
+            final dt = DateTime.tryParse(rawDate);
+            if (dt != null) {
+              for (int i = 0; i < 6; i++) {
+                if (dt.year == months[i].year && dt.month == months[i].month) {
+                  counts[i]++;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    processItems(plans);
+    processItems(masterPlans);
+
+    return List.generate(6, (i) {
+      final monthName = _monthNames[months[i].month - 1];
+      final c = counts[i];
+      return _SatisfactionEntry(monthName, c.toDouble(), c);
+    });
+  }
 
   static const List<Color> _avatarColors = [
     Color(0xFF7C3AED),
@@ -120,7 +171,37 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
         }
       } catch (_) {}
 
-      // 2. Fetch Assigned Clients (/accounts/api/trainers-client-list/)
+      // 2. Fetch Workout Plans & Master Plans first (for trend & client activity)
+      List<dynamic> rawPlans = [];
+      try {
+        final plansRes = await _dio.get('/fitness/api/workout-plans/');
+        if (plansRes.statusCode == 200) {
+          final pData = plansRes.data;
+          if (pData is Map && pData['results'] is List) {
+            rawPlans = pData['results'] as List;
+          } else if (pData is List) {
+            rawPlans = pData;
+          }
+          _activeWorkoutPlans = rawPlans.length;
+        }
+      } catch (_) {}
+
+      List<dynamic> rawMasterPlans = [];
+      try {
+        final mRes = await _dio.get('/fitness/api/master-workout-plans/');
+        if (mRes.statusCode == 200) {
+          final mData = mRes.data;
+          if (mData is Map && mData['results'] is List) {
+            rawMasterPlans = mData['results'] as List;
+          } else if (mData is List) {
+            rawMasterPlans = mData;
+          }
+        }
+      } catch (_) {}
+
+      _satisfaction = _computeActivityTrend(rawPlans, rawMasterPlans);
+
+      // 3. Fetch Assigned Clients (/accounts/api/trainers-client-list/)
       try {
         final clientsRes = await _dio.get('/accounts/api/trainers-client-list/');
         if (clientsRes.statusCode == 200 && clientsRes.data is List) {
@@ -131,34 +212,35 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
             final idx = entry.key;
             final item = entry.value as Map<String, dynamic>;
             final clientName = item['client_name']?.toString() ?? 'Client';
+            final clientId = item['client_id'] ?? item['client'] ?? item['id'];
             final initial = clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C';
             final goal = item['target']?.toString() ??
                 (item['categories'] is List && (item['categories'] as List).isNotEmpty
                     ? (item['categories'] as List)[0].toString()
                     : 'Strength & Fitness');
 
+            // Count actual plans assigned to this client
+            int clientPlanCount = 0;
+            for (final p in rawPlans) {
+              if (p is Map) {
+                final pClientId = p['client_id'] ?? p['client']?['id'] ?? (p['client'] is int ? p['client'] : null);
+                final pClientName = p['client_name'] ?? p['client']?['full_name'] ?? p['client']?['name'];
+                if ((clientId != null && pClientId != null && pClientId.toString() == clientId.toString()) ||
+                    (clientName.isNotEmpty && pClientName != null && pClientName.toString().toLowerCase() == clientName.toLowerCase())) {
+                  clientPlanCount++;
+                }
+              }
+            }
+
             return _TopClient(
               name: clientName,
               avatarInitial: initial,
               avatarColor: _avatarColors[idx % _avatarColors.length],
               goal: goal,
-              sessionsCompleted: 12 + (idx * 4),
-              progress: ((0.5 + (idx * 0.12)).clamp(0.2, 1.0)),
+              sessionsCompleted: clientPlanCount > 0 ? clientPlanCount : 1,
+              progress: clientPlanCount > 0 ? (clientPlanCount / 10.0).clamp(0.2, 1.0) : 0.2,
             );
           }).toList();
-        }
-      } catch (_) {}
-
-      // 3. Fetch Workout Plans (/fitness/api/workout-plans/)
-      try {
-        final plansRes = await _dio.get('/fitness/api/workout-plans/');
-        if (plansRes.statusCode == 200) {
-          final pData = plansRes.data;
-          if (pData is Map && pData['results'] is List) {
-            _activeWorkoutPlans = (pData['results'] as List).length;
-          } else if (pData is List) {
-            _activeWorkoutPlans = pData.length;
-          }
         }
       } catch (_) {}
 
@@ -200,7 +282,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: _buildAppBar(),
       body: _isLoading ? _buildLoader() : _buildBody(),
     );
@@ -233,7 +315,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
         ],
       ),
       centerTitle: true,
-      backgroundColor: const Color(0xFF111111),
+      backgroundColor: const Color(0xFF0A0D1A),
       elevation: 0,
       leading: Padding(
         padding: const EdgeInsets.all(10),
@@ -292,7 +374,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
               const SizedBox(height: 20),
               _buildStatsRow(),
               const SizedBox(height: 24),
-              _buildSectionTitle('Satisfaction Trend'),
+              _buildSectionTitle('Training Activity Trend'),
               const SizedBox(height: 12),
               _buildSatisfactionChart(),
               const SizedBox(height: 24),
@@ -485,9 +567,9 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: const Color(0xFF131830),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
           ),
           child: Column(
             children: [
@@ -527,27 +609,35 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
   // ─────────────────────────────────────────────
 
   Widget _buildSatisfactionChart() {
+    final totalCount = _satisfaction.fold<int>(0, (sum, e) => sum + e.count);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: const Color(0xFF131830),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Client Satisfaction',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+              Row(
+                children: const [
+                  Icon(Icons.insights_rounded, color: Color(0xFFE94560), size: 18),
+                  SizedBox(width: 8),
+                  Text('Training Activity Trend',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                ],
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE94560).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text('Last 6 months',
-                    style: TextStyle(color: Color(0xFFE94560), fontSize: 10)),
+                child: Text('Last 6 months ($totalCount total)',
+                    style: const TextStyle(color: Color(0xFFE94560), fontSize: 10, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -564,7 +654,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _satisfaction
                 .map((e) => Text(e.month,
-                    style: const TextStyle(color: Colors.white38, fontSize: 10)))
+                    style: const TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w500)))
                 .toList(),
           ),
         ],
@@ -581,7 +671,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
       return Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: const Color(0xFF131830),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
@@ -620,9 +710,9 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: const Color(0xFF131830),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: Row(
               children: [
@@ -749,7 +839,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: const Color(0xFF131830),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFE94560).withValues(alpha: 0.25)),
             ),
@@ -808,16 +898,23 @@ class _SatisfactionChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    const double minVal = 3.5;
-    const double maxVal = 5.0;
+    final values = data.map((e) => e.rating).toList();
+    final double maxVal = values.isNotEmpty
+        ? values.reduce((a, b) => a > b ? a : b)
+        : 0.0;
+    // Set a sensible ceiling so the chart has breathing room
+    final double ceiling = maxVal > 0
+        ? (maxVal * 1.3).ceilToDouble().clamp(4.0, 1000.0)
+        : 4.0;
+    const double minVal = 0.0;
 
-    double xStep = size.width / (data.length - 1);
+    final double xStep = data.length > 1 ? size.width / (data.length - 1) : size.width;
 
     List<Offset> points = [];
     for (int i = 0; i < data.length; i++) {
       double x = i * xStep;
-      double normalized = (data[i].rating - minVal) / (maxVal - minVal);
-      double y = size.height - (normalized * size.height);
+      double normalized = ((data[i].rating - minVal) / (ceiling - minVal)).clamp(0.0, 1.0);
+      double y = (size.height - 16) - (normalized * (size.height - 28));
       points.add(Offset(x, y));
     }
 
@@ -868,6 +965,26 @@ class _SatisfactionChartPainter extends CustomPainter {
         2,
         Paint()..color = Colors.white,
       );
+
+      if (data[i].count > 0) {
+        final textSpan = TextSpan(
+          text: '${data[i].count}',
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        );
+        final textPainter = TextPainter(
+          text: textSpan,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(points[i].dx - (textPainter.width / 2), points[i].dy - 16),
+        );
+      }
     }
   }
 

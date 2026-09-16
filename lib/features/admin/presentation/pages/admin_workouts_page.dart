@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/searchable_dropdown.dart';
 
 class AdminWorkoutsPage extends StatefulWidget {
   const AdminWorkoutsPage({super.key});
@@ -485,22 +486,19 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                   ),
                                 ],
                               )
-                            : DropdownButtonFormField<int>(
-                                isExpanded: true,
+                            : SearchableDropdown<int>(
                                 value: _selectedClientId,
-                                decoration: const InputDecoration(
-                                  labelText: 'Select Client *',
-                                  border: OutlineInputBorder(),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(value: null, child: Text('Select a client')),
-                                  ..._clients.map((client) {
-                                    return DropdownMenuItem(
-                                      value: client['id'],
-                                      child: Text(client['name'], overflow: TextOverflow.ellipsis),
-                                    );
-                                  }),
-                                ],
+                                labelText: 'Select Client *',
+                                hintText: 'Search and select client',
+                                searchHint: 'Search client name...',
+                                allowClear: true,
+                                items: _clients.map((client) {
+                                  return SearchableDropdownItem<int>(
+                                    value: client['id'] as int,
+                                    label: client['name'] ?? 'Client',
+                                    subtitle: client['email'],
+                                  );
+                                }).toList(),
                                 onChanged: (value) {
                                   setDialogState(() {
                                     _selectedClientId = value;
@@ -526,22 +524,18 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                   ),
                                 ],
                               )
-                            : DropdownButtonFormField<int>(
-                                isExpanded: true,
+                            : SearchableDropdown<int>(
                                 value: _selectedExerciseId,
-                                decoration: const InputDecoration(
-                                  labelText: 'Select Exercise *',
-                                  border: OutlineInputBorder(),
-                                ),
-                                items: [
-                                  const DropdownMenuItem(value: null, child: Text('Select an exercise')),
-                                  ..._exercises.map((exercise) {
-                                    return DropdownMenuItem(
-                                      value: exercise['id'],
-                                      child: Text(exercise['title'], overflow: TextOverflow.ellipsis),
-                                    );
-                                  }),
-                                ],
+                                labelText: 'Select Exercise *',
+                                hintText: 'Search and select exercise',
+                                searchHint: 'Search exercise name...',
+                                allowClear: true,
+                                items: _exercises.map((exercise) {
+                                  return SearchableDropdownItem<int>(
+                                    value: exercise['id'] as int,
+                                    label: exercise['title'] ?? 'Exercise',
+                                  );
+                                }).toList(),
                                 onChanged: (value) {
                                   setDialogState(() {
                                     _selectedExerciseId = value;

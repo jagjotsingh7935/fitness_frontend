@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/searchable_dropdown.dart';
 
 class TrainerWorkoutsPage extends StatefulWidget {
   const TrainerWorkoutsPage({super.key});
@@ -459,22 +460,15 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: selectedExerciseId,
-                  dropdownColor: const Color(0xFF1F243E),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: 'Select Exercise *',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: const Color(0xFF111425),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                SearchableDropdown<int>(
+                  value: selectedExerciseId,
+                  labelText: 'Select Exercise *',
+                  hintText: 'Search and select exercise',
+                  searchHint: 'Search exercise name...',
                   items: _exercises.map((e) {
-                    return DropdownMenuItem<int>(
+                    return SearchableDropdownItem<int>(
                       value: e['id'] as int,
-                      child: Text(e['title'] ?? 'Exercise', overflow: TextOverflow.ellipsis),
+                      label: e['title'] ?? 'Exercise',
                     );
                   }).toList(),
                   onChanged: (val) => setDialogState(() => selectedExerciseId = val),
@@ -812,7 +806,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -839,7 +833,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
           ],
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -929,7 +923,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: const Color(0xFF131830),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
@@ -1124,7 +1118,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: const Color(0xFF131830),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xFFE94560).withValues(alpha: 0.2), width: 1.2),
             boxShadow: [
@@ -1560,7 +1554,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A1A),
+                        color: const Color(0xFF131830),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFE94560).withValues(alpha: 0.15)),
                       ),
@@ -1623,7 +1617,7 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE94560).withValues(alpha: 0.2) : const Color(0xFF1A1A1A),
+          color: isSelected ? const Color(0xFFE94560).withValues(alpha: 0.2) : const Color(0xFF131830),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? const Color(0xFFE94560) : Colors.white.withValues(alpha: 0.1),
@@ -1662,43 +1656,30 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: selectedClient,
-                  dropdownColor: const Color(0xFF1F243E),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: 'Select Client *',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: const Color(0xFF111425),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                SearchableDropdown<int>(
+                  value: selectedClient,
+                  labelText: 'Select Client *',
+                  hintText: 'Search and select client',
+                  searchHint: 'Search client name...',
                   items: _clients.map((c) {
-                    return DropdownMenuItem<int>(
+                    return SearchableDropdownItem<int>(
                       value: c['id'] as int,
-                      child: Text(c['name'] ?? 'Client', overflow: TextOverflow.ellipsis),
+                      label: c['name'] ?? 'Client',
+                      subtitle: c['email'],
                     );
                   }).toList(),
                   onChanged: (val) => setDialogState(() => selectedClient = val),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: selectedExercise,
-                  dropdownColor: const Color(0xFF1F243E),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: 'Select Exercise *',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: const Color(0xFF111425),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                SearchableDropdown<int>(
+                  value: selectedExercise,
+                  labelText: 'Select Exercise *',
+                  hintText: 'Search and select exercise',
+                  searchHint: 'Search exercise name...',
                   items: _exercises.map((e) {
-                    return DropdownMenuItem<int>(
+                    return SearchableDropdownItem<int>(
                       value: e['id'] as int,
-                      child: Text(e['title'] ?? 'Exercise', overflow: TextOverflow.ellipsis),
+                      label: e['title'] ?? 'Exercise',
                     );
                   }).toList(),
                   onChanged: (val) => setDialogState(() => selectedExercise = val),

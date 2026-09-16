@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/searchable_dropdown.dart';
 
 class TrainerClientsPage extends StatefulWidget {
   const TrainerClientsPage({super.key});
@@ -167,7 +168,7 @@ class _TrainerClientsPageState extends State<TrainerClientsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -194,7 +195,7 @@ class _TrainerClientsPageState extends State<TrainerClientsPage> {
           ],
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -416,7 +417,7 @@ class _TrainerClientsPageState extends State<TrainerClientsPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: const Color(0xFF131830),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: const Color(0xFFE94560).withValues(alpha: 0.2),
@@ -704,23 +705,17 @@ class _ClientRoutinesSheetState extends State<_ClientRoutinesSheet> {
                 if (_masterPlans.isEmpty)
                   const Text('No master programs created yet. Create one in the Routines tab.', style: TextStyle(color: Colors.white54, fontSize: 12))
                 else
-                  DropdownButtonFormField<int>(
-                    isExpanded: true,
-                    initialValue: selectedMasterId,
-                    dropdownColor: const Color(0xFF1F243E),
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      labelText: 'Select Master Template *',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      filled: true,
-                      fillColor: const Color(0xFF111425),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                  SearchableDropdown<int>(
+                    value: selectedMasterId,
+                    labelText: 'Select Master Template *',
+                    hintText: 'Search and select master template',
+                    searchHint: 'Search template name...',
                     items: _masterPlans.map((m) {
                       final itemsCount = (m['items'] as List?)?.length ?? 0;
-                      return DropdownMenuItem<int>(
+                      return SearchableDropdownItem<int>(
                         value: m['id'] as int,
-                        child: Text('${m['title']} ($itemsCount exercises)', overflow: TextOverflow.ellipsis),
+                        label: m['title'] ?? 'Template',
+                        subtitle: '$itemsCount exercises',
                       );
                     }).toList(),
                     onChanged: (val) => setDialogState(() => selectedMasterId = val),
@@ -835,22 +830,15 @@ class _ClientRoutinesSheetState extends State<_ClientRoutinesSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  initialValue: selectedExerciseId,
-                  dropdownColor: const Color(0xFF1F243E),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  decoration: InputDecoration(
-                    labelText: 'Select Exercise *',
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: const Color(0xFF111425),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+                SearchableDropdown<int>(
+                  value: selectedExerciseId,
+                  labelText: 'Select Exercise *',
+                  hintText: 'Search and select exercise',
+                  searchHint: 'Search exercise name...',
                   items: _exercises.map((e) {
-                    return DropdownMenuItem<int>(
+                    return SearchableDropdownItem<int>(
                       value: e['id'] as int,
-                      child: Text(e['title'] ?? 'Exercise', overflow: TextOverflow.ellipsis),
+                      label: e['title'] ?? 'Exercise',
                     );
                   }).toList(),
                   onChanged: (val) => setDialogState(() => selectedExerciseId = val),

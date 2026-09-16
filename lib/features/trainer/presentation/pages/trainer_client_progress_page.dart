@@ -29,8 +29,19 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
       _errorMessage = null;
     });
 
-    // Simulating network delay for dummy data
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final res = await _dio.get('/accounts/api/trainers-client-list/');
+      if (res.statusCode == 200 && res.data is List && (res.data as List).isNotEmpty) {
+        final list = (res.data as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        if (mounted) {
+          setState(() {
+            _clients = list;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+    } catch (_) {}
 
     final dummyData = [
       {
@@ -90,10 +101,10 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: const Text('Client Progress', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -113,10 +124,14 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
                 hintStyle: const TextStyle(color: Colors.white38),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFE94560)),
                 filled: true,
-                fillColor: const Color(0xFF1A1A1A),
+                fillColor: const Color(0xFF161B30),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
                 ),
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
@@ -152,8 +167,11 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      color: const Color(0xFF1A1A1A),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xFF131830),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -165,7 +183,7 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE94560).withOpacity(0.1),
+                    color: const Color(0xFFE94560).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -206,7 +224,7 @@ class _TrainerClientProgressPageState extends State<TrainerClientProgressPage> {
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
                 value: completion,
-                backgroundColor: Colors.white.withOpacity(0.05),
+                backgroundColor: Colors.white.withValues(alpha: 0.05),
                 color: const Color(0xFFE94560),
                 minHeight: 10,
               ),

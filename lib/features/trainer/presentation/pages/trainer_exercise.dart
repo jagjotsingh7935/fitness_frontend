@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_constants.dart';
 
 class TrainerExercisesPage extends StatefulWidget {
   const TrainerExercisesPage({super.key});
@@ -350,7 +349,9 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text(isEdit ? 'Edit Exercise' : 'Add New Exercise'),
+            backgroundColor: const Color(0xFF161B30),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(isEdit ? 'Edit Exercise' : 'Add New Exercise', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             content: Container(
               width: double.maxFinite,
               constraints: const BoxConstraints(maxHeight: 500),
@@ -431,20 +432,22 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Exercise'),
-        content: Text('Are you sure you want to delete "$title"?'),
+        backgroundColor: const Color(0xFF161B30),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Exercise', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete "$title"?', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteExercise(context, exerciseId, title);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF5252)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -454,7 +457,7 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -481,7 +484,7 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
           ],
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -679,7 +682,7 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
                                 final exercise = _filteredExercises[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          color: const Color(0xFF1A1A1A),
+                          color: const Color(0xFF131830),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
@@ -855,10 +858,10 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
                                                   horizontal: 8,
                                                   vertical: 4,
                                                 ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFE94560).withOpacity(0.15),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
+                                                 decoration: BoxDecoration(
+                                                   color: const Color(0xFFE94560).withValues(alpha: 0.15),
+                                                   borderRadius: BorderRadius.circular(12),
+                                                 ),
                                                 child: Text(
                                                   category,
                                                   style: const TextStyle(

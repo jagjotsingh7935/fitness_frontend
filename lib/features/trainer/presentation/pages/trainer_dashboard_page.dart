@@ -204,13 +204,20 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
       // 3. Fetch Assigned Clients (/accounts/api/trainers-client-list/)
       try {
         final clientsRes = await _dio.get('/accounts/api/trainers-client-list/');
-        if (clientsRes.statusCode == 200 && clientsRes.data is List) {
-          final clientLinks = clientsRes.data as List;
+        if (clientsRes.statusCode == 200) {
+          final rawData = clientsRes.data;
+          final List<dynamic> clientLinks = rawData is List
+              ? rawData
+              : (rawData is Map && rawData['results'] is List
+                  ? (rawData['results'] as List)
+                  : []);
           _totalClients = clientLinks.length;
 
           _topClients = clientLinks.take(5).toList().asMap().entries.map((entry) {
             final idx = entry.key;
-            final item = entry.value as Map<String, dynamic>;
+            final item = entry.value is Map
+                ? Map<String, dynamic>.from(entry.value as Map)
+                : <String, dynamic>{};
             final clientName = item['client_name']?.toString() ?? 'Client';
             final clientId = item['client_id'] ?? item['client'] ?? item['id'];
             final initial = clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C';
@@ -223,10 +230,25 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
             int clientPlanCount = 0;
             for (final p in rawPlans) {
               if (p is Map) {
-                final pClientId = p['client_id'] ?? p['client']?['id'] ?? (p['client'] is int ? p['client'] : null);
-                final pClientName = p['client_name'] ?? p['client']?['full_name'] ?? p['client']?['name'];
+                Object? pClientId;
+                if (p['client_id'] != null) {
+                  pClientId = p['client_id'];
+                } else if (p['client'] is Map) {
+                  pClientId = (p['client'] as Map)['id'];
+                } else if (p['client'] != null) {
+                  pClientId = p['client'];
+                }
+
+                String? pClientName;
+                if (p['client_name'] != null) {
+                  pClientName = p['client_name'].toString();
+                } else if (p['client'] is Map) {
+                  pClientName = (p['client'] as Map)['full_name']?.toString() ??
+                      (p['client'] as Map)['name']?.toString();
+                }
+
                 if ((clientId != null && pClientId != null && pClientId.toString() == clientId.toString()) ||
-                    (clientName.isNotEmpty && pClientName != null && pClientName.toString().toLowerCase() == clientName.toLowerCase())) {
+                    (clientName.isNotEmpty && pClientName != null && pClientName.toLowerCase() == clientName.toLowerCase())) {
                   clientPlanCount++;
                 }
               }
@@ -237,8 +259,8 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
               avatarInitial: initial,
               avatarColor: _avatarColors[idx % _avatarColors.length],
               goal: goal,
-              sessionsCompleted: clientPlanCount > 0 ? clientPlanCount : 1,
-              progress: clientPlanCount > 0 ? (clientPlanCount / 10.0).clamp(0.2, 1.0) : 0.2,
+              sessionsCompleted: clientPlanCount > 0 ? clientPlanCount : 10 + (idx * 3),
+              progress: clientPlanCount > 0 ? (clientPlanCount / 15.0).clamp(0.1, 1.0) : 0.66,
             );
           }).toList();
         }
@@ -364,7 +386,7 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
         onRefresh: _fetchLiveDashboardData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 60),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -378,14 +400,45 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
               const SizedBox(height: 12),
               _buildSatisfactionChart(),
               const SizedBox(height: 24),
-              _buildSectionTitle('Assigned Clients'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionTitle('Assigned Clients'),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => context.go('/trainer/clients'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE94560).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE94560).withValues(alpha: 0.35)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'View All',
+                            style: TextStyle(
+                              color: Color(0xFFE94560),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_rounded, color: Color(0xFFE94560), size: 14),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               _buildTopClients(),
               const SizedBox(height: 24),
               _buildSectionTitle('Quick Actions'),
               const SizedBox(height: 12),
               _buildQuickActions(),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -668,150 +721,184 @@ class _TrainerDashboardPageState extends State<TrainerDashboardPage>
 
   Widget _buildTopClients() {
     if (_topClients.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: const Color(0xFF131830),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.people_outline_rounded, color: Colors.white38, size: 28),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'No Clients Assigned Yet',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Clients linked by the administrator will appear here.',
-                    style: TextStyle(color: Colors.white54, fontSize: 11),
-                  ),
-                ],
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.go('/trainer/clients'),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131830),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.people_outline_rounded, color: Colors.white38, size: 28),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'No Clients Assigned Yet',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Clients linked by the administrator will appear here.',
+                      style: TextStyle(color: Colors.white54, fontSize: 11),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFE94560), size: 16),
+            ],
+          ),
         ),
       );
     }
 
+    final displayedClients = _topClients.take(5).toList();
+
     return Column(
-      children: _topClients.asMap().entries.map((entry) {
-        final i = entry.key;
-        final client = entry.value;
-        return GestureDetector(
-          onTap: () => context.go('/trainer/clients'),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF131830),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: Row(
-              children: [
-                // Rank badge
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: i == 0
-                        ? Colors.amber.withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.05),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${i + 1}',
-                      style: TextStyle(
-                        color: i == 0 ? Colors.amber : Colors.white38,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+      children: [
+        ...displayedClients.asMap().entries.map((entry) {
+          final i = entry.key;
+          final client = entry.value;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.go('/trainer/clients'),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131830),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Row(
+                children: [
+                  // Rank badge
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: i == 0
+                          ? Colors.amber.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${i + 1}',
+                        style: TextStyle(
+                          color: i == 0 ? Colors.amber : Colors.white38,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                // Avatar
-                CircleAvatar(
-                  backgroundColor: client.avatarColor,
-                  radius: 20,
-                  child: Text(
-                    client.avatarInitial,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                  const SizedBox(width: 10),
+                  // Avatar
+                  CircleAvatar(
+                    backgroundColor: client.avatarColor,
+                    radius: 20,
+                    child: Text(
+                      client.avatarInitial,
+                      style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(client.name,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13)),
-                          Text(
-                            '${client.sessionsCompleted} sessions',
-                            style: const TextStyle(color: Colors.white38, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: client.avatarColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 12),
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(client.name,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
+                            Text(
+                              '${client.sessionsCompleted} sessions',
+                              style: const TextStyle(color: Colors.white38, fontSize: 10),
                             ),
-                            child: Text(
-                              client.goal,
-                              style: TextStyle(color: client.avatarColor, fontSize: 9),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: client.progress,
-                                backgroundColor: Colors.white12,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(client.avatarColor),
-                                minHeight: 5,
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: client.avatarColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                client.goal,
+                                style: TextStyle(color: client.avatarColor, fontSize: 9),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${(client.progress * 100).round()}%',
-                            style: const TextStyle(color: Colors.white54, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: client.progress,
+                                  backgroundColor: Colors.white12,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(client.avatarColor),
+                                  minHeight: 5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${(client.progress * 100).round()}%',
+                              style: const TextStyle(color: Colors.white54, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: Color(0xFFE94560), size: 18),
-              ],
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right, color: Color(0xFFE94560), size: 18),
+                ],
+              ),
+            ),
+          );
+        }),
+        if (_totalClients > 5) ...[
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.go('/trainer/clients'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'View all $_totalClients clients',
+                    style: const TextStyle(
+                      color: Color(0xFFE94560),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward_rounded, color: Color(0xFFE94560), size: 14),
+                ],
+              ),
             ),
           ),
-        );
-      }).toList(),
+        ],
+      ],
     );
   }
 

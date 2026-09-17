@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../core/network/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/charts/macro_split_chart.dart';
@@ -268,6 +270,7 @@ class _ClientPlansPageState extends State<ClientPlansPage> {
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _ExerciseDetailModal(
@@ -997,27 +1000,139 @@ class _ExerciseDetailModal extends StatefulWidget {
   State<_ExerciseDetailModal> createState() => _ExerciseDetailModalState();
 }
 
+String _sanitizePlanVideoUrl(String? rawUrl) {
+  if (rawUrl == null || rawUrl.trim().isEmpty) return '';
+  String url = rawUrl.trim();
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    final base = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
+        : ApiConstants.baseUrl;
+    final path = url.startsWith('/') ? url : '/$url';
+    url = '$base$path';
+  } else if (url.contains('localhost:8000') || url.contains('127.0.0.1:8000')) {
+    final base = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
+        : ApiConstants.baseUrl;
+    url = url.replaceFirst(RegExp(r'https?://(localhost|127\.0\.0\.1):8000'), base);
+  }
+
+  try {
+    return Uri.encodeFull(url);
+  } catch (_) {
+    return url;
+  }
+}
+
 class _ExerciseDetailModalState extends State<_ExerciseDetailModal> {
   VideoPlayerController? _videoCtrl;
   bool _isInit = false;
   bool _hasError = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.videoUrl != null && widget.videoUrl!.isNotEmpty) {
-      _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!))
-        ..initialize().then((_) {
-          if (mounted) setState(() => _isInit = true);
-        }).catchError((_) {
-          if (mounted) setState(() => _hasError = true);
+    _initVideo();
+  }
+
+  Future<void> _initVideo() async {
+    final rawUrl = widget.videoUrl;
+    final url = _sanitizePlanVideoUrl(rawUrl);
+    if (url.isEmpty) {
+      if (mounted) setState(() => _hasError = true);
+      return;
+    }
+
+    final oldCtrl = _videoCtrl;
+    _videoCtrl = null;
+    if (oldCtrl != null) {
+      oldCtrl.removeListener(_onVideoUpdate);
+      try {
+        await oldCtrl.pause();
+        await oldCtrl.dispose();
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _isInit = false;
+        _hasError = false;
+      });
+    }
+
+    VideoPlayerController? ctrl;
+    try {
+      ctrl = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: const {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'FluxFitnessApp/1.0',
+        },
+      );
+
+      await ctrl.initialize().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('Video connection timed out');
+        },
+      );
+
+      if (_isDisposed || !mounted) {
+        try {
+          await ctrl.pause();
+          await ctrl.dispose();
+        } catch (_) {}
+        return;
+      }
+
+      ctrl.setLooping(true);
+      ctrl.addListener(_onVideoUpdate);
+
+      setState(() {
+        _videoCtrl = ctrl;
+        _isInit = true;
+        _hasError = false;
+      });
+
+      await ctrl.play();
+    } catch (e) {
+      debugPrint('Plan VideoPlayer initialization error: $e');
+      if (ctrl != null) {
+        try {
+          await ctrl.dispose();
+        } catch (_) {}
+      }
+      if (mounted && !_isDisposed) {
+        setState(() {
+          _videoCtrl = null;
+          _isInit = false;
+          _hasError = true;
         });
+      }
+    }
+  }
+
+  void _onVideoUpdate() {
+    if (!mounted || _isDisposed) return;
+    final ctrl = _videoCtrl;
+    if (ctrl != null && ctrl.value.hasError) {
+      setState(() {
+        _hasError = true;
+      });
     }
   }
 
   @override
   void dispose() {
-    _videoCtrl?.dispose();
+    _isDisposed = true;
+    final ctrl = _videoCtrl;
+    _videoCtrl = null;
+    if (ctrl != null) {
+      ctrl.removeListener(_onVideoUpdate);
+      ctrl.pause().catchError((_) {});
+      ctrl.dispose().catchError((_) {});
+    }
     super.dispose();
   }
 
@@ -1056,13 +1171,22 @@ class _ExerciseDetailModalState extends State<_ExerciseDetailModal> {
                       child: Container(
                         height: 200,
                         color: Colors.black,
-                        child: _isInit && _videoCtrl != null
+                        child: _isInit &&
+                                _videoCtrl != null &&
+                                _videoCtrl!.value.isInitialized &&
+                                !_videoCtrl!.value.hasError &&
+                                _videoCtrl!.value.size.width > 0 &&
+                                _videoCtrl!.value.size.height > 0
                             ? Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  AspectRatio(
-                                    aspectRatio: _videoCtrl!.value.aspectRatio,
-                                    child: VideoPlayer(_videoCtrl!),
+                                  Center(
+                                    child: AspectRatio(
+                                      aspectRatio: _videoCtrl!.value.aspectRatio > 0
+                                          ? _videoCtrl!.value.aspectRatio
+                                          : 16 / 9,
+                                      child: VideoPlayer(_videoCtrl!),
+                                    ),
                                   ),
                                   IconButton(
                                     iconSize: 48,
@@ -1084,7 +1208,25 @@ class _ExerciseDetailModalState extends State<_ExerciseDetailModal> {
                               )
                             : Center(
                                 child: _hasError
-                                    ? const Icon(Icons.video_library_rounded, size: 48, color: Colors.white24)
+                                    ? Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.videocam_off_rounded, size: 36, color: Colors.white38),
+                                          const SizedBox(height: 6),
+                                          const Text('Video unavailable', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                          const SizedBox(height: 8),
+                                          TextButton.icon(
+                                            onPressed: _initVideo,
+                                            icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF00F5A0)),
+                                            label: const Text('Retry', style: TextStyle(color: Color(0xFF00F5A0), fontSize: 11, fontWeight: FontWeight.bold)),
+                                            style: TextButton.styleFrom(
+                                              backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                            ),
+                                          ),
+                                        ],
+                                      )
                                     : const CircularProgressIndicator(color: Color(0xFFE94560)),
                               ),
                       ),

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_constants.dart';
+import '../../../../core/widgets/app_video_player_modal.dart';
 
 class AdminExercisesPage extends StatefulWidget {
   const AdminExercisesPage({super.key});
@@ -350,7 +351,12 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text(isEdit ? 'Edit Exercise' : 'Add New Exercise'),
+            backgroundColor: const Color(0xFF161B30),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              isEdit ? 'Edit Exercise' : 'Add New Exercise',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
             content: Container(
               width: double.maxFinite,
               constraints: const BoxConstraints(maxHeight: 500),
@@ -360,46 +366,76 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                   children: [
                     TextField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Exercise Title *',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _categoryNamesController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Categories (comma-separated)',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
                         hintText: 'Muscle Building, Weight Loss, Cardio',
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _durationSecondsController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Duration (seconds)',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
                         hintText: '30',
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _videoUrlController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Video URL',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
                         hintText: 'https://example.com/video.mp4',
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _thumbnailUrlController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Thumbnail URL',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
                         hintText: 'https://example.com/thumbnail.jpg',
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                     ),
                   ],
@@ -409,7 +445,7 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
               ),
               ElevatedButton(
                 onPressed: isEdit
@@ -417,6 +453,8 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                     : () => _createExercise(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE94560),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(isEdit ? 'Save Changes' : 'Add Exercise'),
               ),
@@ -431,19 +469,25 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Exercise'),
-        content: Text('Are you sure you want to delete "$title"?'),
+        backgroundColor: const Color(0xFF161B30),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Exercise', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete "$title"?', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteExercise(context, exerciseId, title);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -454,14 +498,14 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: const Text(
           'Manage Exercises',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -508,10 +552,10 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161B30),
+                          color: const Color(0xFF131830),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFFE5C07B).withValues(alpha: 0.2),
+                            color: const Color(0xFF252D5A),
                           ),
                         ),
                         child: TextField(
@@ -521,7 +565,7 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                           decoration: InputDecoration(
                             hintText: 'Search exercises by title...',
                             hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE5C07B), size: 20),
+                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF818CF8), size: 20),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
                                     icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
@@ -562,9 +606,9 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                                 ),
                                 selected: isSelected,
                                 selectedColor: const Color(0xFFE94560),
-                                backgroundColor: const Color(0xFF161B30),
+                                backgroundColor: const Color(0xFF131830),
                                 side: BorderSide(
-                                  color: isSelected ? const Color(0xFFE94560) : Colors.white12,
+                                  color: isSelected ? const Color(0xFFE94560) : const Color(0xFF252D5A),
                                 ),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 onSelected: (selected) {
@@ -592,15 +636,15 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF161B30),
+                              color: const Color(0xFF131830),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white12),
+                              border: Border.all(color: const Color(0xFF252D5A)),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedStatus,
                                 dropdownColor: const Color(0xFF161B30),
-                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFE5C07B), size: 18),
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF818CF8), size: 18),
                                 style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
                                 isDense: true,
                                 items: const [
@@ -658,11 +702,12 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                                 final exercise = _filteredExercises[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          color: const Color(0xFF1A1A1A),
+                          color: const Color(0xFF131830),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: const Color(0xFFE94560).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(
+                              color: Color(0xFF252D5A),
+                              width: 1.2,
                             ),
                           ),
                           child: ExpansionTile(
@@ -784,9 +829,11 @@ class _AdminExercisesPageState extends State<AdminExercisesPage> {
                                           const SizedBox(height: 8),
                                           InkWell(
                                             onTap: () {
-                                              // TODO: Open video player
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Video player coming soon')),
+                                              showAppVideoPlayerModal(
+                                                context,
+                                                title: exercise['title'] ?? 'Exercise Video',
+                                                videoUrl: exercise['video_url'] ?? '',
+                                                category: (exercise['category_names'] as List?)?.join(', '),
                                               );
                                             },
                                             child: Row(

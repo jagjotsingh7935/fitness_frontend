@@ -14,6 +14,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     bool isAdmin = false,
+    String? role,
   });
 
   /// Triggers the backend to email an OTP to [email].

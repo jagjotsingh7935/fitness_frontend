@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../injection_container.dart';
 import 'bloc/login_otp_cubit.dart';
@@ -138,16 +139,20 @@ class _LoginOtpViewState extends State<_LoginOtpView> {
           context.read<LoginOtpCubit>().clearVerifyOutcome();
           if (!context.mounted) return;
           // Matches password login: signed-in users land on the client shell.
+          NotificationService().scheduleDailyDietReminder();
           context.go(AppRouter.clientPath);
         }
       },
       child: Scaffold(
+        backgroundColor: const Color(0xFF0A0D1A),
         appBar: AppBar(
+          backgroundColor: const Color(0xFF0A0D1A),
+          elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: _onBackPressed,
           ),
-          title: Text(title),
+          title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         ),
         body: SafeArea(
           child: Center(
@@ -224,77 +229,122 @@ class _EmailStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        const Text(
           'Your email',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'We’ll send a one-time code to this address.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.text.withValues(alpha: 0.8),
-              ),
+          style: TextStyle(
+            color: Color(0xFF8E99B7),
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 24),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    textInputAction: TextInputAction.done,
-                    enabled: !isSending,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'you@example.com',
-                    ),
-                    validator: (value) {
-                      final v = value?.trim() ?? '';
-                      if (v.isEmpty) return 'Email is required';
-                      final ok = v.contains('@') && v.contains('.');
-                      if (!ok) return 'Enter a valid email';
-                      return null;
-                    },
-                    onFieldSubmitted: (_) {
-                      if (!isSending) onSendOtp();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: isSending ? null : onSendOtp,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: isSending
-                          ? const SizedBox(
-                              key: ValueKey('loading'),
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text(
-                              'Send OTP',
-                              key: ValueKey('label'),
-                            ),
-                    ),
-                  ),
-                ],
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF131830),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF252D5A), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 25,
+                offset: const Offset(0, 10),
               ),
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                blurRadius: 20,
+                spreadRadius: -2,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.done,
+                  enabled: !isSending,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: const TextStyle(color: Color(0xFF8E99B7)),
+                    hintText: 'you@example.com',
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+                    filled: true,
+                    fillColor: const Color(0xFF0F1326),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF252D5A)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF252D5A)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+                    ),
+                  ),
+                  validator: (value) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) return 'Email is required';
+                    final ok = v.contains('@') && v.contains('.');
+                    if (!ok) return 'Enter a valid email';
+                    return null;
+                  },
+                  onFieldSubmitted: (_) {
+                    if (!isSending) onSendOtp();
+                  },
+                ),
+                const SizedBox(height: 18),
+                FilledButton(
+                  onPressed: isSending ? null : onSendOtp,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: isSending
+                        ? const SizedBox(
+                            key: ValueKey('loading'),
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text(
+                            'Send OTP',
+                            key: ValueKey('label'),
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
         const Spacer(),
-        Text(
-          'Fitness & Metabolism',
+        const Text(
+          'Fitness & Metabolism Platform',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.text.withValues(alpha: 0.6),
-              ),
+          style: TextStyle(
+            color: Color(0xFF5A6689),
+            fontSize: 12,
+          ),
         ),
         const SizedBox(height: 8),
       ],
@@ -322,76 +372,123 @@ class _OtpStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        const Text(
           'Verification code',
-          style: Theme.of(context).textTheme.titleLarge,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           'Enter the 6-digit code sent to $subtitleEmail.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.text.withValues(alpha: 0.8),
-              ),
+          style: const TextStyle(
+            color: Color(0xFF8E99B7),
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 24),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: otpController,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  maxLength: 6,
-                  enabled: !isVerifying,
-                  autofillHints: const [AutofillHints.oneTimeCode],
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'One-time code',
-                    hintText: '000000',
-                    counterText: '',
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF131830),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF252D5A), width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 25,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                blurRadius: 20,
+                spreadRadius: -2,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                maxLength: 6,
+                enabled: !isVerifying,
+                autofillHints: const [AutofillHints.oneTimeCode],
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                style: const TextStyle(color: Colors.white, fontSize: 18, letterSpacing: 4),
+                decoration: InputDecoration(
+                  labelText: 'One-time code',
+                  labelStyle: const TextStyle(color: Color(0xFF8E99B7), letterSpacing: 0),
+                  hintText: '000000',
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+                  counterText: '',
+                  filled: true,
+                  fillColor: const Color(0xFF0F1326),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFF252D5A)),
                   ),
-                  onSubmitted: (_) {
-                    if (!isVerifying) onVerify();
-                  },
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: isVerifying ? null : onVerify,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: isVerifying
-                        ? const SizedBox(
-                            key: ValueKey('v-loading'),
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Continue',
-                            key: ValueKey('v-label'),
-                          ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFF252D5A)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
                   ),
                 ),
-                TextButton(
-                  onPressed: isVerifying ? null : onChangeEmail,
-                  child: const Text('Use a different email'),
+                onSubmitted: (_) {
+                  if (!isVerifying) onVerify();
+                },
+              ),
+              const SizedBox(height: 18),
+              FilledButton(
+                onPressed: isVerifying ? null : onVerify,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-              ],
-            ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: isVerifying
+                      ? const SizedBox(
+                          key: ValueKey('v-loading'),
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text(
+                          'Continue',
+                          key: ValueKey('v-label'),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: isVerifying ? null : onChangeEmail,
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF8E99B7)),
+                child: const Text('Use a different email'),
+              ),
+            ],
           ),
         ),
         const Spacer(),
-        Text(
-          'Fitness & Metabolism',
+        const Text(
+          'Fitness & Metabolism Platform',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.text.withValues(alpha: 0.6),
-              ),
+          style: TextStyle(
+            color: Color(0xFF5A6689),
+            fontSize: 12,
+          ),
         ),
         const SizedBox(height: 8),
       ],

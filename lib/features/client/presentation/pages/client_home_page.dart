@@ -7,7 +7,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/services/notification_service.dart';
-import '../models/demo_models.dart';
 import '../widgets/badges_row.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/charts/calorie_trend_chart.dart';
@@ -21,6 +20,7 @@ import '../widgets/stat_card.dart';
 import '../widgets/streak_card.dart';
 import '../widgets/streak_celebration_dialog.dart';
 import '../widgets/achievement_unlocked_dialog.dart';
+import '../widgets/all_achievements_sheet.dart';
 import '../widgets/trainer_card.dart';
 
 class ClientHomePage extends StatefulWidget {
@@ -64,7 +64,9 @@ class _ClientHomePageState extends State<ClientHomePage> {
   @override
   void initState() {
     super.initState();
-    NotificationService().initialize();
+    NotificationService().initialize().then((_) {
+      NotificationService().scheduleDailyDietReminder();
+    });
     _fetchHomeData();
   }
 
@@ -219,18 +221,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 body: "Awesome work! You're on a $_streakDays day streak. Keep it up!",
               );
 
-              // Add to in-app notification sheet
-              DemoClientData.notifications.insert(
-                0,
-                ClientNotification(
-                  icon: '🔥',
-                  title: 'Day $_streakDays Streak Activated!',
-                  body: "You logged in today and kept your streak alive. Keep burning!",
-                  time: 'Just now',
-                  color: const Color(0xFFFF6B35),
-                ),
-              );
-
               // Schedule popup celebration modal after build
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
@@ -272,18 +262,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
                 id: 200 + (key.hashCode.abs() % 1000),
                 title: '🏆 Achievement Unlocked: $title',
                 body: desc,
-              );
-
-              // Add to in-app notifications
-              DemoClientData.notifications.insert(
-                0,
-                ClientNotification(
-                  icon: emoji,
-                  title: 'Unlocked: $title!',
-                  body: desc,
-                  time: 'Just now',
-                  color: const Color(0xFFE5C07B),
-                ),
               );
 
               // Show modal celebration
@@ -417,7 +395,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
           const SizedBox(height: 14),
 
           const SectionHeader(title: 'Hydration', actionLabel: 'Log ›'),
-          const HydrationCard(),
+          HydrationCard(onUpdated: _fetchHomeData),
           const SizedBox(height: 14),
 
           SectionHeader(
@@ -432,22 +410,109 @@ class _ClientHomePageState extends State<ClientHomePage> {
           TrainerCard(trainerData: _trainerData),
           const SizedBox(height: 14),
 
-          const SectionHeader(title: 'Achievements', actionLabel: 'All ›'),
+          SectionHeader(
+            title: 'Achievements',
+            actionLabel: 'All ›',
+            onActionTap: () => AllAchievementsSheet.show(
+              context,
+              badges: _getAllAchievementsList(),
+            ),
+          ),
           const SizedBox(height: 4),
           BadgesRow(
             badges: _badges.isNotEmpty
                 ? _badges
-                : const [
-                    BadgeModel(emoji: '🏆', name: 'First Step', earned: true, description: 'Started your fitness journey!'),
-                    BadgeModel(emoji: '🔥', name: '3-Day Streak', earned: false, description: '3 active days in a row.'),
-                    BadgeModel(emoji: '⚡', name: '7-Day Warrior', earned: false, description: '7 active days in a row.'),
-                    BadgeModel(emoji: '💧', name: 'Hydration Hero', earned: false, description: 'Hit daily hydration target.'),
-                    BadgeModel(emoji: '🎯', name: 'Goal Crusher', earned: false, description: 'Hit daily calorie goal.'),
-                  ],
+                : _getAllAchievementsList().take(5).toList(),
+            onBadgeTap: (_) => AllAchievementsSheet.show(
+              context,
+              badges: _getAllAchievementsList(),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  List<BadgeModel> _getAllAchievementsList() {
+    final defaultBadges = [
+      const BadgeModel(
+        emoji: '🏆',
+        name: 'First Step',
+        earned: true,
+        description: 'Welcome! You started your daily fitness journey.',
+      ),
+      BadgeModel(
+        emoji: '🔥',
+        name: '3-Day Streak',
+        earned: _streakDays >= 3,
+        description: 'Consistent warrior! 3 consecutive active days logged.',
+      ),
+      BadgeModel(
+        emoji: '⚡',
+        name: '7-Day Warrior',
+        earned: _streakDays >= 7,
+        description: '7 consecutive days strong! Building real discipline.',
+      ),
+      BadgeModel(
+        emoji: '🥇',
+        name: '14-Day Legend',
+        earned: _streakDays >= 14,
+        description: 'Two full weeks of unstoppable fitness momentum!',
+      ),
+      BadgeModel(
+        emoji: '👑',
+        name: '30-Day Master',
+        earned: _streakDays >= 30,
+        description: 'A whole month of dedicated fitness excellence.',
+      ),
+      BadgeModel(
+        emoji: '💧',
+        name: 'Hydration Hero',
+        earned: _badges.any((b) => b.name == 'Hydration Hero' && b.earned),
+        description: 'Reached 100% of your daily target water intake.',
+      ),
+      BadgeModel(
+        emoji: '🎯',
+        name: 'Goal Crusher',
+        earned: _badges.any((b) => b.name == 'Goal Crusher' && b.earned),
+        description: 'Completed scheduled diet meals & hit calorie target.',
+      ),
+      BadgeModel(
+        emoji: '💪',
+        name: 'Workout Ready',
+        earned: _badges.any((b) => b.name == 'Workout Ready' && b.earned) || _todayWorkouts.isNotEmpty,
+        description: 'Equipped with personalized training routine from coach.',
+      ),
+      BadgeModel(
+        emoji: '🥗',
+        name: 'Diet Dedicated',
+        earned: _badges.any((b) => b.name == 'Diet Dedicated' && b.earned) || _todayBurnedKcal > 0,
+        description: 'Actively tracking and following assigned nutrition plan.',
+      ),
+    ];
+
+    final result = <BadgeModel>[];
+    for (final db in defaultBadges) {
+      final existing = _badges.where((b) => b.name.toLowerCase() == db.name.toLowerCase()).firstOrNull;
+      if (existing != null) {
+        result.add(BadgeModel(
+          emoji: existing.emoji.isNotEmpty ? existing.emoji : db.emoji,
+          name: existing.name,
+          earned: existing.earned,
+          description: existing.description.isNotEmpty ? existing.description : db.description,
+        ));
+      } else {
+        result.add(db);
+      }
+    }
+
+    for (final b in _badges) {
+      if (!result.any((r) => r.name.toLowerCase() == b.name.toLowerCase())) {
+        result.add(b);
+      }
+    }
+
+    return result;
   }
 
   Widget _buildTodayWorkoutsList() {

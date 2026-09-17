@@ -11,7 +11,7 @@ import '../../features/client/presentation/pages/client_exercises_page.dart';
 import '../../features/client/presentation/pages/client_home_page.dart';
 import '../../features/client/presentation/pages/client_plans_page.dart';
 import '../../features/client/presentation/pages/client_profile_page.dart';
-import '../../features/client/presentation/pages/client_videos_page.dart';
+// import '../../features/client/presentation/pages/client_videos_page.dart';
 import '../../features/client/presentation/pages/workout_active_page.dart';
 import '../../features/admin/presentation/admin_shell_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
@@ -19,7 +19,7 @@ import '../../features/admin/presentation/pages/admin_trainers_page.dart';
 import '../../features/admin/presentation/pages/admin_clients_page.dart';
 import '../../features/admin/presentation/pages/admin_exercises_page.dart';
 import '../../features/admin/presentation/pages/admin_workouts_page.dart';
-import '../../features/admin/presentation/pages/admin_videos_page.dart';
+// import '../../features/admin/presentation/pages/admin_videos_page.dart';
 import '../../features/admin/presentation/pages/admin_profile_page.dart';
 import '../../features/trainer/presentation/trainer_shell_page.dart';
 import '../../features/trainer/presentation/pages/trainer_clients_page.dart';
@@ -264,15 +264,16 @@ class AppRouter {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: <RouteBase>[
-              GoRoute(
-                path: '$clientPath/videos',
-                name: 'client_videos',
-                builder: (context, state) => const ClientVideosPage(),
-              ),
-            ],
-          ),
+          // Videos branch commented out as requested
+          // StatefulShellBranch(
+          //   routes: <RouteBase>[
+          //     GoRoute(
+          //       path: '$clientPath/videos',
+          //       name: 'client_videos',
+          //       builder: (context, state) => const ClientVideosPage(),
+          //     ),
+          //   ],
+          // ),
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -336,6 +337,8 @@ class AppRouter {
               ),
             ],
           ),
+          // Video Media Library commented out for now as requested
+          /*
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
@@ -345,6 +348,7 @@ class AppRouter {
               ),
             ],
           ),
+          */
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(

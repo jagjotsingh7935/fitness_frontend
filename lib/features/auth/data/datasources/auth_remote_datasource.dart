@@ -49,12 +49,14 @@ final class AuthRemoteDataSource {
     required String email,
     required String password,
     bool isAdmin = false,
+    String? role,
   }) async {
     try {
       final formData = FormData.fromMap({
         // Backend contract uses Django-style `username` for the email/login id.
         'username': email,
         'password': password,
+        'role': ?role,
       });
 
       final response = await _dio.post<Map<String, dynamic>>(

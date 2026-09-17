@@ -24,7 +24,8 @@ class AdminShellPage extends StatelessWidget {
       const _AdminNavItemData('Clients', Icons.people_alt_rounded),
       const _AdminNavItemData('Exercises', Icons.fitness_center_rounded),
       const _AdminNavItemData('Workouts', Icons.assignment_rounded),
-      const _AdminNavItemData('Videos', Icons.video_library_rounded),
+      // Video Media Library commented out for now as requested
+      // const _AdminNavItemData('Videos', Icons.video_library_rounded),
       const _AdminNavItemData('Profile', Icons.admin_panel_settings_rounded),
     ];
 
@@ -84,73 +85,66 @@ class AdminShellPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(navItems.length, (i) {
-                    final item = navItems[i];
-                    final isSelected = i == currentIndex;
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(navItems.length, (i) {
+                  final item = navItems[i];
+                  final isSelected = i == currentIndex;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.5),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _onTap(i),
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _onTap(i),
+                      borderRadius: BorderRadius.circular(16),
+                      splashColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                      highlightColor: Colors.transparent,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSelected ? 12 : 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF6366F1).withValues(alpha: 0.22)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(16),
-                          splashColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                          highlightColor: Colors.transparent,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 220),
-                            curve: Curves.easeOutCubic,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isSelected ? 12 : 9,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
+                          border: isSelected
+                              ? Border.all(
+                                  color: const Color(0xFF6366F1).withValues(alpha: 0.45),
+                                  width: 1,
+                                )
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              item.icon,
+                              size: 18,
                               color: isSelected
-                                  ? const Color(0xFF6366F1).withValues(alpha: 0.22)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(16),
-                              border: isSelected
-                                  ? Border.all(
-                                      color: const Color(0xFF6366F1).withValues(alpha: 0.45),
-                                      width: 1,
-                                    )
-                                  : null,
+                                  ? const Color(0xFF818CF8)
+                                  : Colors.white.withValues(alpha: 0.45),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  item.icon,
-                                  size: 18,
-                                  color: isSelected
-                                      ? const Color(0xFF818CF8)
-                                      : Colors.white.withValues(alpha: 0.45),
+                            if (isSelected) ...[
+                              const SizedBox(width: 5),
+                              Text(
+                                item.label,
+                                style: const TextStyle(
+                                  color: Color(0xFF818CF8),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 11,
+                                  letterSpacing: -0.2,
                                 ),
-                                if (isSelected) ...[
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    item.label,
-                                    style: const TextStyle(
-                                      color: Color(0xFF818CF8),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    );
-                  }),
-                ),
+                    ),
+                  );
+                }),
               ),
             ),
           ),

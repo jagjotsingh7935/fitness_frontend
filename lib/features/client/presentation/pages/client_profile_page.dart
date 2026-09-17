@@ -5,14 +5,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/auth_token_store.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../injection_container.dart';
 import '../../../auth/data/models/category_dto.dart';
 import '../../data/models/client_profile_dto.dart';
 import '../state/client_profile_cubit.dart';
+import '../widgets/assigned_coaches_sheet.dart';
 import '../widgets/chart_card.dart';
 import '../widgets/charts/weight_progress_chart.dart';
 import '../widgets/client_scaffold.dart';
+import '../widgets/daily_reminders_sheet.dart';
+import '../widgets/fitness_goals_sheet.dart';
 import '../widgets/preferences_section.dart';
 import '../widgets/profile_hero.dart';
 import '../widgets/section_header.dart';
@@ -36,6 +38,7 @@ class _ClientProfileView extends StatelessWidget {
   void _showEditProfileModal(BuildContext context, ClientProfileDto? currentProfile, List<CategoryDto> allCategories) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalCtx) {
@@ -150,7 +153,12 @@ class _ClientProfileView extends StatelessWidget {
                       subtitle: profile?.categories.isNotEmpty == true
                           ? profile!.categories.map((c) => c.name).join(' · ')
                           : 'No fitness goals selected yet',
-                      onTap: () => _showEditProfileModal(context, profile, state.categories),
+                      onTap: () => FitnessGoalsSheet.show(
+                        context,
+                        profile: profile,
+                        allCategories: state.categories,
+                        onSaved: () => context.read<ClientProfileCubit>().loadProfile(),
+                      ),
                     ),
                     PreferenceItemModel(
                       icon: const Icon(Icons.fitness_center_rounded, color: Color(0xFFFF9F43), size: 20),
@@ -159,12 +167,19 @@ class _ClientProfileView extends StatelessWidget {
                       subtitle: profile?.activeTrainers.isNotEmpty == true
                           ? '${profile!.activeTrainers.length} coach connected'
                           : 'Self-guided training mode',
+                      onTap: () => AssignedCoachesSheet.show(
+                        context,
+                        profile: profile,
+                      ),
                     ),
                     PreferenceItemModel(
                       icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF38BDF8), size: 20),
                       iconBg: const Color(0xFF38BDF8).withValues(alpha: 0.15),
                       title: 'Daily Reminders & Alerts',
                       subtitle: 'Hydration reminders, workout schedule & meal times',
+                      onTap: () => DailyRemindersSheet.show(
+                        context,
+                      ),
                     ),
                     PreferenceItemModel(
                       icon: const Icon(Icons.logout_rounded, color: Color(0xFFFF4B72), size: 20),
@@ -917,7 +932,7 @@ class _EditProfileModalState extends State<_EditProfileModal> {
                         );
                       },
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24 + MediaQuery.of(context).padding.bottom),
                   ],
                 ),
               ),

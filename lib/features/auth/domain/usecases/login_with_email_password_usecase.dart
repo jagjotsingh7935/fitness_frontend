@@ -15,11 +15,13 @@ final class LoginWithEmailPasswordUseCase {
     required String email,
     required String password,
     bool isAdmin = false,
+    String? role,
   }) {
     return _repository.loginWithEmailAndPassword(
       email: email,
       password: password,
       isAdmin: isAdmin,
+      role: role,
     );
   }
 }

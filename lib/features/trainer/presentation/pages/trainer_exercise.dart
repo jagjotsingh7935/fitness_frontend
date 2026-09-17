@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/widgets/app_video_player_modal.dart';
 
 class TrainerExercisesPage extends StatefulWidget {
   const TrainerExercisesPage({super.key});
@@ -808,9 +809,11 @@ class _TrainerExercisesPageState extends State<TrainerExercisesPage> {
                                           const SizedBox(height: 8),
                                           InkWell(
                                             onTap: () {
-                                              // TODO: Open video player
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Video player coming soon')),
+                                              showAppVideoPlayerModal(
+                                                context,
+                                                title: exercise['title'] ?? 'Exercise Video',
+                                                videoUrl: exercise['video_url'] ?? '',
+                                                category: (exercise['category_names'] as List?)?.join(', '),
                                               );
                                             },
                                             child: Row(

@@ -36,12 +36,14 @@ final class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     bool isAdmin = false,
+    String? role,
   }) async {
     try {
       final dto = await _remote.loginWithEmailAndPassword(
         email: email,
         password: password,
         isAdmin: isAdmin,
+        role: role,
       );
       final session = dto.toDomain();
 

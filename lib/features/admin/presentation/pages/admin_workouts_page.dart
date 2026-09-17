@@ -461,7 +461,12 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: Text(isEdit ? 'Edit Workout Plan' : 'Add New Workout Plan'),
+            backgroundColor: const Color(0xFF161B30),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              isEdit ? 'Edit Workout Plan' : 'Add New Workout Plan',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
             content: Container(
               width: double.maxFinite,
               constraints: const BoxConstraints(maxHeight: 500),
@@ -548,9 +553,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                     DropdownButtonFormField<int>(
                       isExpanded: true,
                       value: _selectedDayOfWeek,
-                      decoration: const InputDecoration(
+                      dropdownColor: const Color(0xFF161B30),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
                         labelText: 'Day of Week *',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                       items: _daysOfWeek.map((day) {
                         final dayOfWeek = day.keys.first;
@@ -574,9 +585,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                         Expanded(
                           child: TextField(
                             controller: _setsController,
-                            decoration: const InputDecoration(
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
                               labelText: 'Sets',
-                              border: OutlineInputBorder(),
+                              labelStyle: const TextStyle(color: Colors.white70),
+                              hintStyle: const TextStyle(color: Colors.white30),
+                              filled: true,
+                              fillColor: const Color(0xFF0D1022),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -585,9 +602,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                         Expanded(
                           child: TextField(
                             controller: _repsController,
-                            decoration: const InputDecoration(
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
                               labelText: 'Reps',
-                              border: OutlineInputBorder(),
+                              labelStyle: const TextStyle(color: Colors.white70),
+                              hintStyle: const TextStyle(color: Colors.white30),
+                              filled: true,
+                              fillColor: const Color(0xFF0D1022),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -602,9 +625,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                         Expanded(
                           child: TextField(
                             controller: _timePerRepController,
-                            decoration: const InputDecoration(
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
                               labelText: 'Time/Rep (sec)',
-                              border: OutlineInputBorder(),
+                              labelStyle: const TextStyle(color: Colors.white70),
+                              hintStyle: const TextStyle(color: Colors.white30),
+                              filled: true,
+                              fillColor: const Color(0xFF0D1022),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -613,9 +642,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                         Expanded(
                           child: TextField(
                             controller: _orderController,
-                            decoration: const InputDecoration(
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
                               labelText: 'Order',
-                              border: OutlineInputBorder(),
+                              labelStyle: const TextStyle(color: Colors.white70),
+                              hintStyle: const TextStyle(color: Colors.white30),
+                              filled: true,
+                              fillColor: const Color(0xFF0D1022),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                             ),
                             keyboardType: TextInputType.number,
                           ),
@@ -627,9 +662,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                     // Notes
                     TextField(
                       controller: _notesController,
-                      decoration: const InputDecoration(
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
                         labelText: 'Notes (Optional)',
-                        border: OutlineInputBorder(),
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        hintStyle: const TextStyle(color: Colors.white30),
+                        filled: true,
+                        fillColor: const Color(0xFF0D1022),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF252D5A))),
                       ),
                       maxLines: 3,
                     ),
@@ -640,7 +681,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
               ),
               ElevatedButton(
                 onPressed: isEdit
@@ -648,6 +689,8 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                     : () => _createWorkoutPlan(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE94560),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(isEdit ? 'Save Changes' : 'Add Plan'),
               ),
@@ -662,19 +705,25 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Workout Plan'),
-        content: Text('Are you sure you want to delete the workout plan for $clientName - $exerciseTitle?'),
+        backgroundColor: const Color(0xFF161B30),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Workout Plan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to delete the workout plan for $clientName - $exerciseTitle?', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               _deleteWorkoutPlan(context, planId, clientName, exerciseTitle);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -685,14 +734,14 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFF0A0D1A),
       appBar: AppBar(
         title: const Text(
           'Manage Workout Plans',
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: const Color(0xFF0A0D1A),
         elevation: 0,
         actions: [
           IconButton(
@@ -739,10 +788,10 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161B30),
+                          color: const Color(0xFF131830),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFFE94560).withValues(alpha: 0.25),
+                            color: const Color(0xFF252D5A),
                           ),
                         ),
                         child: TextField(
@@ -752,7 +801,7 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                           decoration: InputDecoration(
                             hintText: 'Search by client, coach, exercise, or notes...',
                             hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE94560), size: 20),
+                            prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF818CF8), size: 20),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
                                     icon: const Icon(Icons.clear, color: Colors.white54, size: 18),
@@ -789,9 +838,9 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                               ),
                               selected: _selectedDayFilter == -1,
                               selectedColor: const Color(0xFFE94560),
-                              backgroundColor: const Color(0xFF161B30),
+                              backgroundColor: const Color(0xFF131830),
                               side: BorderSide(
-                                color: _selectedDayFilter == -1 ? const Color(0xFFE94560) : Colors.white12,
+                                color: _selectedDayFilter == -1 ? const Color(0xFFE94560) : const Color(0xFF252D5A),
                               ),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               onSelected: (selected) {
@@ -816,9 +865,9 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                                 ),
                                 selected: isSelected,
                                 selectedColor: const Color(0xFFE94560),
-                                backgroundColor: const Color(0xFF161B30),
+                                backgroundColor: const Color(0xFF131830),
                                 side: BorderSide(
-                                  color: isSelected ? const Color(0xFFE94560) : Colors.white12,
+                                  color: isSelected ? const Color(0xFFE94560) : const Color(0xFF252D5A),
                                 ),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 onSelected: (selected) {
@@ -845,15 +894,15 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF161B30),
+                              color: const Color(0xFF131830),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.white12),
+                              border: Border.all(color: const Color(0xFF252D5A)),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedStatus,
                                 dropdownColor: const Color(0xFF161B30),
-                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFE94560), size: 18),
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF818CF8), size: 18),
                                 style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                                 isDense: true,
                                 items: const [
@@ -923,11 +972,12 @@ class _AdminWorkoutsPageState extends State<AdminWorkoutsPage> {
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          color: const Color(0xFF1A1A1A),
+                          color: const Color(0xFF131830),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: const Color(0xFFE94560).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(
+                              color: Color(0xFF252D5A),
+                              width: 1.2,
                             ),
                           ),
                           child: ExpansionTile(

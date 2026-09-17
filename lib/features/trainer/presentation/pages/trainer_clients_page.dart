@@ -934,7 +934,9 @@ class _ClientRoutinesSheetState extends State<_ClientRoutinesSheet> {
                       setDialogState(() => isSubmitting = true);
                       try {
                         final req = {
+                          'client': widget.client['id'],
                           'client_id': widget.client['id'],
+                          'exercise': selectedExerciseId,
                           'exercise_id': selectedExerciseId,
                           'day_of_week': selectedDay,
                           'sets': int.tryParse(setsCtrl.text) ?? 3,
@@ -946,10 +948,35 @@ class _ClientRoutinesSheetState extends State<_ClientRoutinesSheet> {
                         final res = await widget.dio.post('/fitness/api/workout-plans/create/', data: req);
                         if (res.statusCode == 201 || res.statusCode == 200) {
                           if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('✅ Exercise added to client routine!'),
+                                backgroundColor: Color(0xFF00F5A0),
+                              ),
+                            );
+                          }
                           _fetchClientRoutines();
+                        }
+                      } on DioException catch (e) {
+                        setDialogState(() => isSubmitting = false);
+                        final msg = e.response?.data is Map
+                            ? (e.response?.data['error'] ??
+                                e.response?.data['detail'] ??
+                                (e.response?.data as Map).values.map((v) => v is List ? v.join(', ') : v.toString()).join(' | '))
+                            : (e.message ?? 'Failed to add exercise');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $msg'), backgroundColor: Colors.redAccent),
+                          );
                         }
                       } catch (e) {
                         setDialogState(() => isSubmitting = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+                          );
+                        }
                       }
                     },
               style: ElevatedButton.styleFrom(

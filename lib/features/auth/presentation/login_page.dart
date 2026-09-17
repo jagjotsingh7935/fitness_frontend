@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../injection_container.dart';
 import 'bloc/login_cubit.dart';
@@ -66,6 +67,7 @@ class _LoginViewState extends State<_LoginView> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       isAdmin: _activeRole == LoginRole.admin,
+      expectedRole: _activeRole.name,
     );
   }
 
@@ -124,17 +126,23 @@ class _LoginViewState extends State<_LoginView> {
         if (state.status == LoginStatus.success) {
           final role = state.userRole ?? (isAdmin ? 'admin' : (isTrainer ? 'trainer' : 'client'));
 
+          // Security check: ensure role strictly matches active portal
+          if (_activeRole == LoginRole.admin && role != 'admin') return;
+          if (_activeRole == LoginRole.trainer && role != 'trainer') return;
+          if (_activeRole == LoginRole.client && role != 'client') return;
+
           if (role == 'admin') {
             context.go(AppRouter.adminPath);
           } else if (role == 'trainer') {
             context.go(AppRouter.trainerPath);
           } else {
+            NotificationService().scheduleDailyDietReminder();
             context.go(AppRouter.clientPath);
           }
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFF0A0D1A),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -203,7 +211,7 @@ class _LoginViewState extends State<_LoginView> {
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.3,
-                            color: AppColors.text,
+                            color: Colors.white,
                           ),
                     ),
                     const SizedBox(height: 6),
@@ -211,7 +219,7 @@ class _LoginViewState extends State<_LoginView> {
                       roleSubtitle,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.text.withValues(alpha: 0.7),
+                            color: const Color(0xFF8E99B7),
                             fontSize: 13,
                           ),
                     ),
@@ -220,16 +228,22 @@ class _LoginViewState extends State<_LoginView> {
                     // Main Form Card
                     Container(
                       decoration: BoxDecoration(
-                        color: AppColors.card,
+                        color: const Color(0xFF131830),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: AppColors.border.withValues(alpha: 0.8),
+                          color: const Color(0xFF252D5A),
+                          width: 1.2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 20,
+                            color: Colors.black.withValues(alpha: 0.45),
+                            blurRadius: 25,
                             offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: roleColor.withValues(alpha: 0.08),
+                            blurRadius: 20,
+                            spreadRadius: -2,
                           ),
                         ],
                       ),
@@ -245,27 +259,29 @@ class _LoginViewState extends State<_LoginView> {
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.username, AutofillHints.email],
                               textInputAction: TextInputAction.next,
-                              style: const TextStyle(color: AppColors.text),
+                              style: const TextStyle(color: Colors.white),
                               decoration: InputDecoration(
                                 labelText: 'Email Address',
+                                labelStyle: const TextStyle(color: Color(0xFF8E99B7)),
                                 hintText: isClient ? 'client@example.com' : 'user@example.com',
+                                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
                                 prefixIcon: Icon(
                                   Icons.alternate_email_rounded,
-                                  color: roleColor.withValues(alpha: 0.8),
+                                  color: roleColor.withValues(alpha: 0.85),
                                   size: 20,
                                 ),
                                 filled: true,
-                                fillColor: AppColors.background.withValues(alpha: 0.6),
+                                fillColor: const Color(0xFF0F1326),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
-                                  borderSide: BorderSide(
-                                    color: AppColors.border.withValues(alpha: 0.8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF252D5A),
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
-                                  borderSide: BorderSide(
-                                    color: AppColors.border.withValues(alpha: 0.8),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF252D5A),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -299,12 +315,13 @@ class _LoginViewState extends State<_LoginView> {
                                   autofillHints: const [AutofillHints.password],
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _onSubmit(context),
-                                  style: const TextStyle(color: AppColors.text),
+                                  style: const TextStyle(color: Colors.white),
                                   decoration: InputDecoration(
                                     labelText: 'Password',
+                                    labelStyle: const TextStyle(color: Color(0xFF8E99B7)),
                                     prefixIcon: Icon(
                                       Icons.lock_outline_rounded,
-                                      color: roleColor.withValues(alpha: 0.8),
+                                      color: roleColor.withValues(alpha: 0.85),
                                       size: 20,
                                     ),
                                     suffixIcon: IconButton(
@@ -315,22 +332,22 @@ class _LoginViewState extends State<_LoginView> {
                                         state.obscurePassword
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined,
-                                        color: AppColors.text.withValues(alpha: 0.6),
+                                        color: const Color(0xFF8E99B7),
                                         size: 20,
                                       ),
                                     ),
                                     filled: true,
-                                    fillColor: AppColors.background.withValues(alpha: 0.6),
+                                    fillColor: const Color(0xFF0F1326),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide(
-                                        color: AppColors.border.withValues(alpha: 0.8),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF252D5A),
                                       ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide(
-                                        color: AppColors.border.withValues(alpha: 0.8),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFF252D5A),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
@@ -423,7 +440,7 @@ class _LoginViewState extends State<_LoginView> {
                                   icon: const Icon(Icons.arrow_back_rounded, size: 16),
                                   label: const Text('Return to Client Login'),
                                   style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.text.withValues(alpha: 0.7),
+                                    foregroundColor: const Color(0xFF8E99B7),
                                   ),
                                 ),
                               ),
@@ -442,7 +459,7 @@ class _LoginViewState extends State<_LoginView> {
                           Text(
                             "Don't have an account? ",
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.text.withValues(alpha: 0.7),
+                                  color: const Color(0xFF8E99B7),
                                 ),
                           ),
                           GestureDetector(
@@ -465,30 +482,31 @@ class _LoginViewState extends State<_LoginView> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        color: AppColors.card.withValues(alpha: 0.5),
+                        color: const Color(0xFF131830),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.border.withValues(alpha: 0.6),
+                          color: const Color(0xFF252D5A),
+                          width: 1.2,
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: [
+                            children: const [
                               Icon(
                                 Icons.swap_horiz_rounded,
                                 size: 16,
-                                color: AppColors.text.withValues(alpha: 0.5),
+                                color: Color(0xFF8E99B7),
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: 6),
                               Text(
                                 'QUICK ROLE ACCESS',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.2,
-                                  color: AppColors.text.withValues(alpha: 0.5),
+                                  color: Color(0xFF8E99B7),
                                 ),
                               ),
                             ],
@@ -544,7 +562,7 @@ class _LoginViewState extends State<_LoginView> {
                       'Fitness & Metabolism Platform',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.text.withValues(alpha: 0.4),
+                            color: const Color(0xFF5A6689),
                           ),
                     ),
                   ],
@@ -584,10 +602,10 @@ class _RoleIconButton extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : AppColors.background.withValues(alpha: 0.4),
+          color: isSelected ? color.withValues(alpha: 0.18) : const Color(0xFF0F1326),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? color : AppColors.border,
+            color: isSelected ? color : const Color(0xFF252D5A),
             width: isSelected ? 1.6 : 1,
           ),
         ),
@@ -596,7 +614,7 @@ class _RoleIconButton extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: isSelected ? color : AppColors.text.withValues(alpha: 0.6),
+              color: isSelected ? color : const Color(0xFF8E99B7),
             ),
             const SizedBox(height: 4),
             Text(
@@ -604,14 +622,14 @@ class _RoleIconButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? color : AppColors.text,
+                color: isSelected ? color : Colors.white,
               ),
             ),
             Text(
               subtitle,
               style: TextStyle(
                 fontSize: 9.5,
-                color: AppColors.text.withValues(alpha: 0.45),
+                color: isSelected ? color.withValues(alpha: 0.85) : const Color(0xFF8E99B7),
               ),
             ),
           ],

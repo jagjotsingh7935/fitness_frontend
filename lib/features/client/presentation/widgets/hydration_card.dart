@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../core/network/dio_client.dart';
-import '../state/hydration_cubit.dart';
 
 class HydrationCard extends StatefulWidget {
-  const HydrationCard({super.key});
+  const HydrationCard({super.key, this.onUpdated});
+
+  final VoidCallback? onUpdated;
 
   @override
   State<HydrationCard> createState() => _HydrationCardState();
@@ -21,7 +21,6 @@ class _HydrationCardState extends State<HydrationCard> {
   bool _isLoading = true;
   String? _errorMessage;
   String? _todayLogId;
-  int? _targetId;
 
   @override
   void initState() {
@@ -63,7 +62,6 @@ class _HydrationCardState extends State<HydrationCard> {
         
         if (todayTarget != null) {
           _totalCups = todayTarget['target_cups'] ?? 8;
-          _targetId = todayTarget['id'];
         }
       }
 
@@ -128,6 +126,7 @@ class _HydrationCardState extends State<HydrationCard> {
           setState(() {
             _filledCount = newFilledCount;
           });
+          widget.onUpdated?.call();
         } else {
           throw Exception('Failed to update hydration log');
         }
@@ -148,6 +147,7 @@ class _HydrationCardState extends State<HydrationCard> {
             _filledCount = newFilledCount;
             _todayLogId = logData['id'].toString();
           });
+          widget.onUpdated?.call();
         } else {
           throw Exception('Failed to create hydration log');
         }

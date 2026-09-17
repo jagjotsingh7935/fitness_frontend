@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'client_top_bar.dart';
+import 'notifications_sheet.dart';
 
 class ClientScaffold extends StatelessWidget {
   const ClientScaffold({
@@ -33,7 +34,7 @@ class ClientScaffold extends StatelessWidget {
               greeting: greeting,
               title: title,
               showNotification: showNotificationDot,
-              onNotificationTap: onNotificationTap,
+              onNotificationTap: onNotificationTap ?? () => NotificationsSheet.show(context),
             ),
             Expanded(
               child: onRefresh != null

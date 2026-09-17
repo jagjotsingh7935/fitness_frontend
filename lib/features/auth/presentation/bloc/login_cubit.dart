@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 
+import '../../../../core/auth/auth_token_store.dart';
 import '../../../../core/session/auth_session.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/usecases/login_with_email_password_usecase.dart';
@@ -56,6 +58,7 @@ class LoginCubit extends Cubit<LoginState> {
     required String email,
     required String password,
     bool isAdmin = false,
+    String? expectedRole,
   }) async {
     emit(
       state.copyWith(
@@ -70,13 +73,49 @@ class LoginCubit extends Cubit<LoginState> {
       email: email,
       password: password,
       isAdmin: isAdmin,
+      role: expectedRole,
     );
 
     switch (result) {
       case Success(value: final authSession):
-        // Extract role from AuthSession.user
+        final user = authSession.user;
         final userRole = _extractUserRole(authSession, isAdmin);
-        print('🔐 Login success! User role: $userRole');
+
+        // Strictly enforce role matching to prevent cross-portal logins
+        if (expectedRole != null) {
+          final isMismatch = (expectedRole == 'admin' && !user.isAdmin) ||
+              (expectedRole == 'trainer' && !user.isTrainer) ||
+              (expectedRole == 'client' && !user.isClient);
+
+          if (isMismatch) {
+            if (GetIt.I.isRegistered<AuthTokenStore>()) {
+              await GetIt.I<AuthTokenStore>().clear();
+            }
+
+            final readableRole = userRole == 'admin'
+                ? 'an Admin'
+                : userRole == 'trainer'
+                    ? 'a Trainer'
+                    : 'a Client';
+            final targetPortal = userRole == 'admin'
+                ? 'Admin'
+                : userRole == 'trainer'
+                    ? 'Trainer'
+                    : 'Client';
+
+            emit(
+              state.copyWith(
+                status: LoginStatus.failure,
+                updateErrorMessage: true,
+                errorMessage:
+                    'Access Denied: This account is registered as $readableRole. Please select the $targetPortal tab to log in.',
+                userRole: null,
+              ),
+            );
+            return;
+          }
+        }
+
         emit(
           state.copyWith(
             status: LoginStatus.success,
@@ -86,7 +125,6 @@ class LoginCubit extends Cubit<LoginState> {
           ),
         );
       case Failed(:final failure):
-        print('❌ Login failed: ${failure.message}');
         emit(
           state.copyWith(
             status: LoginStatus.failure,
@@ -99,47 +137,34 @@ class LoginCubit extends Cubit<LoginState> {
   }
 
   String _extractUserRole(AuthSession authSession, bool isAdmin) {
-    print('🔍 Extracting user role from AuthSession...');
-    print('📊 User.isAdmin: ${authSession.user.isAdmin}');
-    print('📊 User.isTrainer: ${authSession.user.isTrainer}');
-    print('📊 User.isClient: ${authSession.user.isClient}');
-    print('📊 User.roles: ${authSession.user.roles}');
-    
     // Check if user is admin
     if (authSession.user.isAdmin) {
-      print('✅ User is ADMIN - Setting role to admin');
       return 'admin';
     }
     
     // Check if user is trainer
     if (authSession.user.isTrainer) {
-      print('✅ User is TRAINER - Setting role to trainer');
       return 'trainer';
     }
     
     // Check if user is client
     if (authSession.user.isClient) {
-      print('✅ User is CLIENT - Setting role to client');
       return 'client';
     }
     
     // Check roles array for admin/trainer
     if (authSession.user.roles.contains('admin')) {
-      print('✅ Found admin in roles array');
       return 'admin';
     }
     if (authSession.user.roles.contains('trainer')) {
-      print('✅ Found trainer in roles array');
       return 'trainer';
     }
     
     // If admin login was attempted, force role to admin
     if (isAdmin) {
-      print('⚠️ isAdmin flag was true, forcing role to admin');
       return 'admin';
     }
     
-    print('⚠️ No specific role found, defaulting to client');
     return 'client';
   }
 }

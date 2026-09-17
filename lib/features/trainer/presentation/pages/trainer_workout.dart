@@ -1765,7 +1765,9 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
                       setDialogState(() => isSaving = true);
                       try {
                         final req = {
+                          'client': selectedClient,
                           'client_id': selectedClient,
+                          'exercise': selectedExercise,
                           'exercise_id': selectedExercise,
                           'day_of_week': selectedDay,
                           'sets': int.tryParse(setsCtrl.text) ?? 3,
@@ -1775,10 +1777,35 @@ class _TrainerWorkoutsPageState extends State<TrainerWorkoutsPage> with SingleTi
                         final res = await _dio.post('/fitness/api/workout-plans/create/', data: req);
                         if (res.statusCode == 201 || res.statusCode == 200) {
                           if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('✅ Exercise assigned successfully!'),
+                                backgroundColor: Color(0xFF00F5A0),
+                              ),
+                            );
+                          }
                           _fetchClientWorkoutPlans();
                         }
-                      } catch (_) {
+                      } on DioException catch (e) {
                         setDialogState(() => isSaving = false);
+                        final msg = e.response?.data is Map
+                            ? (e.response?.data['error'] ??
+                                e.response?.data['detail'] ??
+                                (e.response?.data as Map).values.map((v) => v is List ? v.join(', ') : v.toString()).join(' | '))
+                            : (e.message ?? 'Failed to assign exercise');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $msg'), backgroundColor: Colors.redAccent),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() => isSaving = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+                          );
+                        }
                       }
                     },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE94560), foregroundColor: Colors.white),

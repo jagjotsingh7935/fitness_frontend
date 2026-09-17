@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 
+import '../../../../core/auth/auth_token_store.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/usecases/request_otp_usecase.dart';
 import '../../domain/usecases/verify_otp_usecase.dart';
@@ -141,7 +143,21 @@ class LoginOtpCubit extends Cubit<LoginOtpState> {
     final result = await _verifyOtp(email: email, otp: otp);
 
     switch (result) {
-      case Success():
+      case Success(value: final session):
+        if (!session.user.isClient) {
+          if (GetIt.I.isRegistered<AuthTokenStore>()) {
+            await GetIt.I<AuthTokenStore>().clear();
+          }
+          emit(
+            state.copyWith(
+              verifyStatus: VerifyOtpUiStatus.failure,
+              updateVerifyErrorMessage: true,
+              verifyErrorMessage:
+                  'Access Denied: OTP login is only available for client accounts.',
+            ),
+          );
+          return;
+        }
         emit(state.copyWith(verifyStatus: VerifyOtpUiStatus.success));
       case Failed(:final failure):
         emit(

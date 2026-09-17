@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/data/models/category_dto.dart';
+import '../../../../core/network/error/exceptions.dart';
 import '../../data/datasources/client_remote_datasource.dart';
 import '../../data/models/client_profile_dto.dart';
 
@@ -68,10 +69,11 @@ class ClientProfileCubit extends Cubit<ClientProfileState> {
         ),
       );
     } catch (e) {
+      final msg = e is AppException ? e.message : e.toString().replaceAll('Exception:', '').trim();
       emit(
         state.copyWith(
           status: ClientProfileStatus.failure,
-          errorMessage: e.toString().replaceAll('Exception:', '').trim(),
+          errorMessage: msg,
         ),
       );
     }
@@ -92,10 +94,11 @@ class ClientProfileCubit extends Cubit<ClientProfileState> {
       emit(state.copyWith(status: ClientProfileStatus.loaded, clearMessages: true));
       return true;
     } catch (e) {
+      final msg = e is AppException ? e.message : e.toString().replaceAll('Exception:', '').trim();
       emit(
         state.copyWith(
           status: ClientProfileStatus.failure,
-          errorMessage: e.toString().replaceAll('Exception:', '').trim(),
+          errorMessage: msg,
         ),
       );
       return false;

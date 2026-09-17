@@ -5,7 +5,9 @@
 abstract final class ApiConstants {
   /// Backend base URL (no trailing slash).
   static const String baseUrl =
-      'https://fitness-backend-ygh0.onrender.com';
+      ///'https://fitness-backend-ygh0.onrender.com';
+      ///'https://volcanic-yeastily-van.ngrok-free.dev';
+      'http://34.131.104.116';
 
   /// Email/password login (multipart form: `username`, `password`).
   static const String loginPath = '/accounts/api/login/';

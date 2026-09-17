@@ -89,6 +89,21 @@ class ClientRemoteDataSource {
       message = data['detail']?.toString() ??
           data['message']?.toString() ??
           data['error']?.toString();
+      if (message == null && data.isNotEmpty) {
+        final errors = <String>[];
+        data.forEach((key, value) {
+          if (value is List) {
+            errors.add('$key: ${value.join(", ")}');
+          } else {
+            errors.add('$key: $value');
+          }
+        });
+        if (errors.isNotEmpty) {
+          message = errors.join('\n');
+        }
+      }
+    } else if (data is String && data.isNotEmpty) {
+      message = data;
     }
 
     return ServerException(

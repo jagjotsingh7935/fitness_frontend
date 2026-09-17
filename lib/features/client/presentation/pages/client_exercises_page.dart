@@ -1,9 +1,36 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:video_player/video_player.dart';
+import '../../../../core/network/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../widgets/client_scaffold.dart';
+
+String _sanitizeVideoUrl(String? rawUrl) {
+  if (rawUrl == null || rawUrl.trim().isEmpty) return '';
+  String url = rawUrl.trim();
+
+  // If it's a relative path starting with /media/ or media/
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    final base = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
+        : ApiConstants.baseUrl;
+    final path = url.startsWith('/') ? url : '/$url';
+    url = '$base$path';
+  } else if (url.contains('localhost:8000') || url.contains('127.0.0.1:8000')) {
+    final base = ApiConstants.baseUrl.endsWith('/')
+        ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
+        : ApiConstants.baseUrl;
+    url = url.replaceFirst(RegExp(r'https?://(localhost|127\.0\.0\.1):8000'), base);
+  }
+
+  try {
+    return Uri.encodeFull(url);
+  } catch (_) {
+    return url;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Models
@@ -143,6 +170,21 @@ class _ClientExercisesPageState extends State<ClientExercisesPage> {
     super.dispose();
   }
 
+  static const _dayNames = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+
+  String get _todayDayName {
+    final idx = (DateTime.now().weekday - 1).clamp(0, 6);
+    return _dayNames[idx];
+  }
+
   Future<void> _fetchWorkoutPlans() async {
     setState(() {
       _isLoading = true;
@@ -150,8 +192,10 @@ class _ClientExercisesPageState extends State<ClientExercisesPage> {
     });
 
     try {
+      final todayWeekday = (DateTime.now().weekday - 1).clamp(0, 6);
       final response = await _dio.get(
         '/fitness/api/my-workout-plans/',
+        queryParameters: {'day_of_week': todayWeekday},
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
@@ -160,8 +204,10 @@ class _ClientExercisesPageState extends State<ClientExercisesPage> {
             ? response.data as List<dynamic>
             : (response.data['results'] as List<dynamic>);
 
+        // Filter only current day's allocated exercises
         final plans = data
             .map((p) => WorkoutPlanModel.fromJson(p as Map<String, dynamic>))
+            .where((p) => p.dayOfWeek == todayWeekday)
             .toList()
           ..sort((a, b) => a.order.compareTo(b.order));
 
@@ -231,6 +277,7 @@ class _ClientExercisesPageState extends State<ClientExercisesPage> {
   void _openVideo(WorkoutPlanModel plan) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _VideoBottomSheet(plan: plan),
@@ -352,7 +399,7 @@ class _ClientExercisesPageState extends State<ClientExercisesPage> {
                       ),
                     ),
                   )
-                : const _EmptyState()
+                : _EmptyState(dayName: _todayDayName)
           else
             _ExerciseList(plans: _filtered, onTap: _openVideo),
         ],
@@ -880,6 +927,7 @@ class _VideoBottomSheetState extends State<_VideoBottomSheet> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _hasError = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -888,37 +936,111 @@ class _VideoBottomSheetState extends State<_VideoBottomSheet> {
   }
 
   Future<void> _initVideo() async {
-    final url = widget.plan.exerciseDetail.videoUrl;
-    if (url == null || url.isEmpty) {
-      setState(() => _hasError = true);
+    final rawUrl = widget.plan.exerciseDetail.videoUrl;
+    final url = _sanitizeVideoUrl(rawUrl);
+    if (url.isEmpty) {
+      if (mounted) setState(() => _hasError = true);
       return;
     }
 
+    // Clean up any existing controller before initializing a new one
+    final oldCtrl = _controller;
+    _controller = null;
+    if (oldCtrl != null) {
+      oldCtrl.removeListener(_onControllerUpdate);
+      try {
+        await oldCtrl.pause();
+        await oldCtrl.dispose();
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _isInitialized = false;
+        _hasError = false;
+      });
+    }
+
+    VideoPlayerController? ctrl;
     try {
-      final ctrl = VideoPlayerController.networkUrl(Uri.parse(url));
-      await ctrl.initialize();
+      ctrl = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: const {
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'FluxFitnessApp/1.0',
+        },
+      );
+
+      // Timeout after 15 seconds to prevent indefinite freezing
+      await ctrl.initialize().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('Video connection timed out');
+        },
+      );
+
+      if (_isDisposed || !mounted) {
+        try {
+          await ctrl.pause();
+          await ctrl.dispose();
+        } catch (_) {}
+        return;
+      }
+
       ctrl.setLooping(true);
-      ctrl.play();
-      if (mounted) {
+      ctrl.addListener(_onControllerUpdate);
+
+      setState(() {
+        _controller = ctrl;
+        _isInitialized = true;
+        _hasError = false;
+      });
+
+      // Safely start playback
+      await ctrl.play();
+    } catch (e) {
+      debugPrint('VideoPlayer initialization error: $e');
+      if (ctrl != null) {
+        try {
+          await ctrl.dispose();
+        } catch (_) {}
+      }
+      if (mounted && !_isDisposed) {
         setState(() {
-          _controller = ctrl;
-          _isInitialized = true;
+          _controller = null;
+          _isInitialized = false;
+          _hasError = true;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _hasError = true);
+    }
+  }
+
+  void _onControllerUpdate() {
+    if (!mounted || _isDisposed) return;
+    final ctrl = _controller;
+    if (ctrl != null && ctrl.value.hasError) {
+      setState(() {
+        _hasError = true;
+      });
     }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _isDisposed = true;
+    final ctrl = _controller;
+    _controller = null;
+    if (ctrl != null) {
+      ctrl.removeListener(_onControllerUpdate);
+      ctrl.pause().catchError((_) {});
+      ctrl.dispose().catchError((_) {});
+    }
     super.dispose();
   }
 
   void _togglePlay() {
     final ctrl = _controller;
-    if (ctrl == null) return;
+    if (ctrl == null || !ctrl.value.isInitialized) return;
     setState(() {
       ctrl.value.isPlaying ? ctrl.pause() : ctrl.play();
     });
@@ -960,6 +1082,7 @@ class _VideoBottomSheetState extends State<_VideoBottomSheet> {
               hasError: _hasError,
               thumbnailUrl: ex.thumbnailUrl,
               onTap: _togglePlay,
+              onRetry: _initVideo,
             ),
 
             // Details — scrollable
@@ -1062,6 +1185,7 @@ class _VideoPlayer extends StatelessWidget {
   final bool hasError;
   final String? thumbnailUrl;
   final VoidCallback onTap;
+  final VoidCallback onRetry;
 
   const _VideoPlayer({
     required this.controller,
@@ -1069,62 +1193,65 @@ class _VideoPlayer extends StatelessWidget {
     required this.hasError,
     required this.thumbnailUrl,
     required this.onTap,
+    required this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final height = width * 9 / 16;
+    final ctrl = controller;
+    final isReady = isInitialized &&
+        ctrl != null &&
+        ctrl.value.isInitialized &&
+        !ctrl.value.hasError &&
+        ctrl.value.size.width > 0 &&
+        ctrl.value.size.height > 0;
 
     return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
+      onTap: isReady ? onTap : null,
+      child: Container(
         width: width,
         height: height,
+        color: Colors.black,
         child: Stack(
           alignment: Alignment.center,
           children: [
-            if (isInitialized && controller != null)
-              SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: controller!.value.size.width,
-                    height: controller!.value.size.height,
-                    child: VideoPlayer(controller!),
-                  ),
+            if (isReady)
+              Center(
+                child: AspectRatio(
+                  aspectRatio: ctrl.value.aspectRatio > 0 ? ctrl.value.aspectRatio : 16 / 9,
+                  child: VideoPlayer(ctrl),
                 ),
               )
             else if (hasError)
-              _ErrorVideoPlaceholder(thumbnailUrl: thumbnailUrl)
+              _ErrorVideoPlaceholder(thumbnailUrl: thumbnailUrl, onRetry: onRetry)
             else
               _LoadingVideoPlaceholder(thumbnailUrl: thumbnailUrl),
 
-            if (isInitialized && controller != null)
+            if (isReady)
               ValueListenableBuilder<VideoPlayerValue>(
-                valueListenable: controller!,
+                valueListenable: ctrl,
                 builder: (_, value, __) => AnimatedOpacity(
                   opacity: value.isPlaying ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 200),
                   child: _PlayIcon(),
                 ),
-              )
-            else if (!hasError)
-              _PlayIcon(),
+              ),
 
-            if (isInitialized && controller != null)
+            if (isReady)
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
                 child: ValueListenableBuilder<VideoPlayerValue>(
-                  valueListenable: controller!,
+                  valueListenable: ctrl,
                   builder: (_, value, __) {
                     final total = value.duration.inMilliseconds;
                     final pos = value.position.inMilliseconds;
                     final progress = total > 0 ? pos / total : 0.0;
                     return LinearProgressIndicator(
-                      value: progress,
+                      value: progress.clamp(0.0, 1.0),
                       backgroundColor: Colors.white24,
                       valueColor: const AlwaysStoppedAnimation(Color(0xFFE94560)),
                       minHeight: 3.5,
@@ -1175,7 +1302,8 @@ class _LoadingVideoPlaceholder extends StatelessWidget {
 
 class _ErrorVideoPlaceholder extends StatelessWidget {
   final String? thumbnailUrl;
-  const _ErrorVideoPlaceholder({this.thumbnailUrl});
+  final VoidCallback onRetry;
+  const _ErrorVideoPlaceholder({this.thumbnailUrl, required this.onRetry});
 
   @override
   Widget build(BuildContext context) => Stack(
@@ -1185,14 +1313,28 @@ class _ErrorVideoPlaceholder extends StatelessWidget {
             Image.network(thumbnailUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _bg())
           else
             _bg(),
-          Container(color: Colors.black54),
-          const Center(
+          Container(color: Colors.black87),
+          Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.videocam_off_rounded, color: Colors.white54, size: 40),
-                SizedBox(height: 8),
-                Text('Video unavailable', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                const Icon(Icons.videocam_off_rounded, color: Colors.white54, size: 36),
+                const SizedBox(height: 6),
+                const Text(
+                  'Video unavailable',
+                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF00F5A0)),
+                  label: const Text('Retry', style: TextStyle(color: Color(0xFF00F5A0), fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1246,7 +1388,9 @@ class _ErrorState extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final String dayName;
+  const _EmptyState({this.dayName = 'Today'});
+
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
@@ -1262,13 +1406,13 @@ class _EmptyState extends StatelessWidget {
               child: const Icon(Icons.fitness_center_rounded, size: 38, color: Color(0xFFE5C07B)),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No exercises assigned yet',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+            Text(
+              'No exercises scheduled for $dayName',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Your trainer will assign your customized workout routine shortly.',
+              'Enjoy your rest day or check your full routine in the Plans tab.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white54, fontSize: 12),
             ),

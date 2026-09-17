@@ -71,7 +71,7 @@ class ClientShellPage extends StatelessWidget {
               ],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _NavBarItem(
                   index: 0,
@@ -94,19 +94,20 @@ class ClientShellPage extends StatelessWidget {
                   icon: Icons.calendar_today_rounded,
                   onTap: () => _onTap(2),
                 ),
+                // Videos tab commented out as requested
+                // _NavBarItem(
+                //   index: 3,
+                //   currentIndex: currentIndex,
+                //   label: 'Videos',
+                //   icon: Icons.play_circle_fill_rounded,
+                //   onTap: () => _onTap(3),
+                // ),
                 _NavBarItem(
                   index: 3,
                   currentIndex: currentIndex,
-                  label: 'Videos',
-                  icon: Icons.play_circle_fill_rounded,
-                  onTap: () => _onTap(3),
-                ),
-                _NavBarItem(
-                  index: 4,
-                  currentIndex: currentIndex,
                   label: 'Profile',
                   icon: Icons.person_rounded,
-                  onTap: () => _onTap(4),
+                  onTap: () => _onTap(3),
                 ),
               ],
             ),

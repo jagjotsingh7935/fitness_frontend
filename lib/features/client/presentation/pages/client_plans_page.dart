@@ -1004,6 +1004,16 @@ String _sanitizePlanVideoUrl(String? rawUrl) {
   if (rawUrl == null || rawUrl.trim().isEmpty) return '';
   String url = rawUrl.trim();
 
+  // Convert Google Drive sharing links to direct stream/download URLs
+  if (url.contains('drive.google.com')) {
+    final match = RegExp(r'/d/([a-zA-Z0-9_-]+)').firstMatch(url) ??
+        RegExp(r'[?&]id=([a-zA-Z0-9_-]+)').firstMatch(url);
+    if (match != null) {
+      final fileId = match.group(1);
+      return 'https://drive.google.com/uc?export=download&id=$fileId';
+    }
+  }
+
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     final base = ApiConstants.baseUrl.endsWith('/')
         ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
@@ -1016,6 +1026,11 @@ String _sanitizePlanVideoUrl(String? rawUrl) {
         : ApiConstants.baseUrl;
     url = url.replaceFirst(RegExp(r'https?://(localhost|127\.0\.0\.1):8000'), base);
   }
+
+  // Decode first to prevent double-encoding (%20 -> %2520)
+  try {
+    url = Uri.decodeFull(url);
+  } catch (_) {}
 
   try {
     return Uri.encodeFull(url);

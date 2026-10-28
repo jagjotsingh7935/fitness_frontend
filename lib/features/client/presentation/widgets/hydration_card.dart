@@ -7,7 +7,8 @@ import '../../../../core/network/dio_client.dart';
 class HydrationCard extends StatefulWidget {
   const HydrationCard({super.key, this.onUpdated});
 
-  final VoidCallback? onUpdated;
+  /// Called with the new filled-cup count after a successful update.
+  final ValueChanged<int>? onUpdated;
 
   @override
   State<HydrationCard> createState() => _HydrationCardState();
@@ -126,7 +127,7 @@ class _HydrationCardState extends State<HydrationCard> {
           setState(() {
             _filledCount = newFilledCount;
           });
-          widget.onUpdated?.call();
+          widget.onUpdated?.call(newFilledCount);
         } else {
           throw Exception('Failed to update hydration log');
         }
@@ -147,7 +148,7 @@ class _HydrationCardState extends State<HydrationCard> {
             _filledCount = newFilledCount;
             _todayLogId = logData['id'].toString();
           });
-          widget.onUpdated?.call();
+          widget.onUpdated?.call(newFilledCount);
         } else {
           throw Exception('Failed to create hydration log');
         }

@@ -79,6 +79,24 @@ class ClientProfileCubit extends Cubit<ClientProfileState> {
     }
   }
 
+  /// Deletes the account on the server. Returns `true` when the account is gone.
+  Future<bool> deleteAccount() async {
+    emit(state.copyWith(status: ClientProfileStatus.updating, clearMessages: true));
+    try {
+      await _remote.deleteMyAccount();
+      return true;
+    } catch (e) {
+      final msg = e is AppException ? e.message : e.toString().replaceAll('Exception:', '').trim();
+      emit(
+        state.copyWith(
+          status: ClientProfileStatus.failure,
+          errorMessage: msg,
+        ),
+      );
+      return false;
+    }
+  }
+
   Future<bool> updateProfile(Map<String, dynamic> updateData) async {
     emit(state.copyWith(status: ClientProfileStatus.updating, clearMessages: true));
     try {

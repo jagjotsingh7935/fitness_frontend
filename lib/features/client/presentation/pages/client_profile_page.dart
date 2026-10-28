@@ -53,6 +53,85 @@ class _ClientProfileView extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmAndDeleteAccount(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B36),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
+        ),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white),
+        ),
+        content: const Text(
+          'This will permanently delete your account and all of your data, including your '
+          'profile, workout and diet plans, and progress history. This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF4B72),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) return;
+
+    final cubit = context.read<ClientProfileCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final tokenStore = GetIt.I<AuthTokenStore>();
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00F5A0)),
+          ),
+        ),
+      ),
+    );
+
+    final deleted = await cubit.deleteAccount();
+
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+    if (!deleted) return;
+
+    await tokenStore.clear();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Your account has been deleted.'),
+        backgroundColor: Color(0xFF00F5A0),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    router.go(AppRouter.loginPath);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ClientProfileCubit, ClientProfileState>(
@@ -233,6 +312,14 @@ class _ClientProfileView extends StatelessWidget {
                           }
                         }
                       },
+                    ),
+                    PreferenceItemModel(
+                      icon: const Icon(Icons.delete_forever_rounded, color: Color(0xFFFF4B72), size: 20),
+                      iconBg: const Color(0xFFFF4B72).withValues(alpha: 0.15),
+                      title: 'Delete Account',
+                      subtitle: 'Permanently delete your account and all your data',
+                      arrowColor: const Color(0xFFFF4B72),
+                      onTap: () => _confirmAndDeleteAccount(context),
                     ),
                   ],
                 ),

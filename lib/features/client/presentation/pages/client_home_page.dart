@@ -395,7 +395,9 @@ class _ClientHomePageState extends State<ClientHomePage> {
           const SizedBox(height: 14),
 
           const SectionHeader(title: 'Hydration', actionLabel: 'Log ›'),
-          HydrationCard(onUpdated: _fetchHomeData),
+          HydrationCard(
+            onUpdated: (cups) => setState(() => _hydrationCups = cups),
+          ),
           const SizedBox(height: 14),
 
           SectionHeader(

@@ -51,6 +51,18 @@ class ClientRemoteDataSource {
     }
   }
 
+  /// Permanently deletes the authenticated user's account on the server.
+  Future<void> deleteMyAccount() async {
+    try {
+      await _dio.delete<dynamic>(ApiConstants.currentUserPath);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('Failed to delete account: $e');
+    }
+  }
+
   Future<List<CategoryDto>> fetchCategories() async {
     try {
       final response = await _dio.get<dynamic>(

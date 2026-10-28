@@ -20,7 +20,7 @@ class NotificationService {
       tz.initializeTimeZones();
 
       const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+          AndroidInitializationSettings('@drawable/ic_notification');
 
       const DarwinInitializationSettings initializationSettingsDarwin =
           DarwinInitializationSettings(
@@ -73,7 +73,7 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         ticker: 'ticker',
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_notification',
       );
 
       const DarwinNotificationDetails darwinNotificationDetails =
@@ -115,7 +115,7 @@ class NotificationService {
             'Automatic 12:00 PM reminder to complete daily fitness diet goals',
         importance: Importance.max,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_notification',
       );
 
       const DarwinNotificationDetails darwinNotificationDetails =
